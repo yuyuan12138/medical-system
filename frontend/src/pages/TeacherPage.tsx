@@ -8,6 +8,7 @@ import { CanvasHeader } from '../components/layout/CanvasHeader';
 import { NotificationsView } from '../components/notifications/NotificationsView';
 import { ProfileView } from '../components/profile/ProfileView';
 import { StudentsView } from '../components/students/StudentsView';
+import { HighRiskListView } from '../components/records/HighRiskListView';
 import { ReferralManagementView } from '../components/records/ReferralManagementView';
 import { SecurityConsentView } from '../components/security/SecurityConsentView';
 import { DetailsPanel, DetailsSection, DetailItem } from '../components/common/DetailsPanel';
@@ -38,6 +39,7 @@ export const TeacherTabs = {
   DASHBOARD: 'Dashboard',
   NOTIFICATIONS: 'Notifications',
   STUDENTS: 'Students',
+  HIGH_RISK: 'High Risk',
   ASSESSMENTS: 'Assessments',
   REFERRAL_MANAGEMENT: 'Referral Management',
   SECURITY: 'Security & Consent',
@@ -49,6 +51,7 @@ const TEACHER_TAB_TITLES: Record<TeacherPageName, string> = {
   [TeacherTabs.DASHBOARD]: '控制面板',
   [TeacherTabs.NOTIFICATIONS]: '通知中心',
   [TeacherTabs.STUDENTS]: '学生管理',
+  [TeacherTabs.HIGH_RISK]: '高危名单',
   [TeacherTabs.ASSESSMENTS]: '测评量表',
   [TeacherTabs.REFERRAL_MANAGEMENT]: '转诊管理',
   [TeacherTabs.SECURITY]: '隐私安全'
@@ -229,6 +232,8 @@ export function TeacherPage() {
         );
       case TeacherTabs.STUDENTS:
         return <StudentsView resetToken={lastEvent?.timestamp} onStudentSelect={setSelectedItem} selectedStudentId={selectedItem?.id} header={(loading) => <CanvasHeader title={TEACHER_TAB_TITLES[activePage]} isLoading={loading} />} />;
+      case TeacherTabs.HIGH_RISK:
+        return <HighRiskListView header={(loading) => <CanvasHeader title={TEACHER_TAB_TITLES[activePage]} isLoading={loading} />} />;
       case TeacherTabs.ASSESSMENTS:
         return (
           <>
@@ -317,6 +322,7 @@ export function TeacherPage() {
         <NavItem icon="notifications" label="通知中心" active={activePage === TeacherTabs.NOTIFICATIONS} onClick={() => handlePageChange(TeacherTabs.NOTIFICATIONS)} badge={unreadCount > 0} />
 
         <NavItem icon="group" label="学生管理" active={activePage === TeacherTabs.STUDENTS} onClick={() => handlePageChange(TeacherTabs.STUDENTS)} />
+        <NavItem icon="warning" label="高危名单" active={activePage === TeacherTabs.HIGH_RISK} onClick={() => handlePageChange(TeacherTabs.HIGH_RISK)} />
         <NavItem icon="fact_check" label="测评量表" active={activePage === TeacherTabs.ASSESSMENTS} onClick={() => handlePageChange(TeacherTabs.ASSESSMENTS)} />
         <NavItem icon="assignment_turned_in" label="转诊管理" active={activePage === TeacherTabs.REFERRAL_MANAGEMENT} onClick={() => handlePageChange(TeacherTabs.REFERRAL_MANAGEMENT)} />
         {/* <NavItem icon="security" label="隐私安全" active={activePage === TeacherTabs.SECURITY} onClick={() => handlePageChange(TeacherTabs.SECURITY)} /> */}
