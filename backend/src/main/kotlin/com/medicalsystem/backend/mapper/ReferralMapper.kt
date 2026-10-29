@@ -178,7 +178,7 @@ class ReferralMapper {
         )
     }
 
-    fun toDetailsDto(model: Referral, student: com.medicalsystem.backend.model.Student?, referredBy: com.medicalsystem.backend.model.User?, currentUser: com.medicalsystem.backend.model.User? = null): com.medicalsystem.backend.dto.ReferralDetailsDto {
+    fun toDetailsDto(model: Referral, student: com.medicalsystem.backend.model.Student?, referredBy: com.medicalsystem.backend.model.User?, currentUser: com.medicalsystem.backend.model.User? = null, scidDiagnosis: String? = null): com.medicalsystem.backend.dto.ReferralDetailsDto {
         val baseInfo = toDto(model, student, referredBy, currentUser)
         
         val studentDemographics = com.medicalsystem.backend.dto.StudentDemographicsDto(
@@ -194,6 +194,7 @@ class ReferralMapper {
             isFirstVisit = model.clinicalStatus.contains(com.medicalsystem.backend.model.ClinicalStatusType.FIRST_VISIT),
             isMedicated = model.clinicalStatus.contains(com.medicalsystem.backend.model.ClinicalStatusType.MEDICATED),
             priorTherapy = if (model.clinicalStatus.contains(com.medicalsystem.backend.model.ClinicalStatusType.PRIOR_THERAPY)) "有" else "无",
+            scidDiagnosis = scidDiagnosis,
             fullDescription = model.description
         )
 

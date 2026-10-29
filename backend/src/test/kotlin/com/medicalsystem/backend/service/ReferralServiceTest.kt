@@ -45,6 +45,9 @@ class ReferralServiceTest {
     @Mock
     private lateinit var eventPublisher: DomainEventPublisher
 
+    @Mock
+    private lateinit var studentHealthProfileRepository: com.medicalsystem.backend.repository.StudentHealthProfileRepository
+
     @InjectMocks
     private lateinit var referralService: ReferralService
 
