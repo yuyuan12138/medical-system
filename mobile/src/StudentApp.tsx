@@ -210,7 +210,7 @@ export function AppContent() {
           {isTeacher && (
             <md-navigation-tab
               label="发放问卷"
-              onClick={() => handleTabChange(2)}
+              onClick={() => handleTabChange(1)}
             >
               <md-icon slot="active-icon" filled style={{ fontVariationSettings: "'FILL' 1" } as any}>send</md-icon>
               <md-icon slot="inactive-icon">send</md-icon>
