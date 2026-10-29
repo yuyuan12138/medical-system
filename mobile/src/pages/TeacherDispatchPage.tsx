@@ -22,7 +22,7 @@ export const TeacherDispatchPage: React.FC = () => {
         intakeApi.getAssessmentCatalog().catch(() => []),
         intakeApi.getStaffStudents().catch(() => []),
       ]);
-      setCatalog(c.filter(item => item.isEnabled));
+      setCatalog(c.filter(item => item.isEnabled !== false));
       if (c.length > 0) setScale(c[0].batteryCode);
       setStudents(s);
     } catch (e) {
