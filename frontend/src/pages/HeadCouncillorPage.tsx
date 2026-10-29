@@ -285,6 +285,14 @@ export function HeadCouncillorPage() {
                 statusType: ui.statusType
               };
             }) ?? []}
+            onActivityClick={item => {
+              const raw = activityData?.activities?.find(a => String(a.id) === item.id);
+              const type = raw?.type;
+              if (type?.startsWith('REFERRAL_')) handlePageChange(HeadCouncillorTabs.REFERRAL_MANAGEMENT);
+              else if (type?.startsWith('ASSESSMENT_') || type === 'HIGH_RISK_ASSESSMENT_SUBMITTED') handlePageChange(HeadCouncillorTabs.HIGH_RISK);
+              else if (type === 'USER_APPROVAL_PENDING') handlePageChange(HeadCouncillorTabs.STAFF);
+              else if (type === 'UNREAD_NOTIFICATION') handlePageChange(HeadCouncillorTabs.NOTIFICATIONS);
+            }}
           />
         </>) : null;
       default:

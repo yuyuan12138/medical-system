@@ -297,6 +297,13 @@ export function TeacherPage() {
                 statusType: ui.statusType
               };
             }) ?? []}
+            onActivityClick={item => {
+              const raw = activityData?.activities?.find(a => String(a.id) === item.id);
+              const type = raw?.type;
+              if (type?.startsWith('REFERRAL_')) handlePageChange(TeacherTabs.REFERRAL_MANAGEMENT);
+              else if (type?.startsWith('ASSESSMENT_') || type === 'HIGH_RISK_ASSESSMENT_SUBMITTED') handlePageChange(TeacherTabs.HIGH_RISK);
+              else if (type === 'UNREAD_NOTIFICATION') handlePageChange(TeacherTabs.NOTIFICATIONS);
+            }}
           />
         </>) : null;
       default:
