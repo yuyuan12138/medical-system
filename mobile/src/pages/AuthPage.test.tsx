@@ -35,7 +35,7 @@ describe('AuthPage', () => {
     expect(screen.queryByText(/仅需30秒/)).toBeNull();
 
     // Login inputs
-    expect(document.querySelector('md-outlined-text-field[label="学号"]')).not.toBeNull();
+    expect(document.querySelector('md-outlined-text-field[label="学号 / 工号"]')).not.toBeNull();
     expect(document.querySelector('md-outlined-text-field[label="登录密码"]')).not.toBeNull();
     expect(screen.getByText('忘记了学号或密码？')).toBeDefined();
 
@@ -231,7 +231,7 @@ describe('AuthPage', () => {
       </AuthProvider>
     );
 
-    const numField = document.querySelector('md-outlined-text-field[label="学号"]')!;
+    const numField = document.querySelector('md-outlined-text-field[label="学号 / 工号"]')!;
     const pwdField = document.querySelector('md-outlined-text-field[label="登录密码"]')!;
 
     simulateInput(numField, '8209220532');
@@ -263,7 +263,7 @@ describe('AuthPage', () => {
       </AuthProvider>
     );
 
-    const numField = document.querySelector('md-outlined-text-field[label="学号"]')!;
+    const numField = document.querySelector('md-outlined-text-field[label="学号 / 工号"]')!;
     const pwdField = document.querySelector('md-outlined-text-field[label="登录密码"]')!;
 
     simulateInput(numField, '=CMD()');
@@ -323,7 +323,7 @@ describe('AuthPage', () => {
       </AuthProvider>
     );
 
-    const numField = document.querySelector('md-outlined-text-field[label="学号"]')!;
+    const numField = document.querySelector('md-outlined-text-field[label="学号 / 工号"]')!;
     const pwdField = document.querySelector('md-outlined-text-field[label="登录密码"]')!;
 
     simulateInput(numField, '  l209220532  ');
@@ -347,7 +347,7 @@ describe('AuthPage', () => {
       </AuthProvider>
     );
 
-    const numField = document.querySelector('md-outlined-text-field[label="学号"]')!;
+    const numField = document.querySelector('md-outlined-text-field[label="学号 / 工号"]')!;
     const pwdField = document.querySelector('md-outlined-text-field[label="登录密码"]')!;
 
     simulateInput(numField, '9999999999');
@@ -447,7 +447,7 @@ describe('AuthPage', () => {
       expect(screen.getByText('使用您的中南大学学号以继续心理普查')).toBeDefined();
     });
     expect(
-      document.querySelector('md-outlined-text-field[label="学号"]')?.getAttribute('value')
+      document.querySelector('md-outlined-text-field[label="学号 / 工号"]')?.getAttribute('value')
     ).toBe('2026001001');
   });
 
@@ -503,7 +503,7 @@ describe('AuthPage', () => {
       </AuthProvider>
     );
 
-    const numField = document.querySelector('md-outlined-text-field[label="学号"]')!;
+    const numField = document.querySelector('md-outlined-text-field[label="学号 / 工号"]')!;
     const pwdField = document.querySelector('md-outlined-text-field[label="登录密码"]')!;
 
     simulateInput(numField, '8209220532');

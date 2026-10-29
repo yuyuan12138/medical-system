@@ -309,7 +309,8 @@ export const AuthPage: React.FC = () => {
     if (loginMode === 'password') {
       const trimmedNum = loginStudentNumber.trim();
       const isLegacySeedNum = /^[Ss]\d{7}$|^\d{7}$/.test(trimmedNum);
-      const numValidation = isLegacySeedNum
+      const isStaffEmployeeNumber = /^[A-Za-z]{2,4}-\d{3,8}$/.test(trimmedNum);
+      const numValidation = isLegacySeedNum || isStaffEmployeeNumber
         ? { isValid: true, normalized: trimmedNum.toUpperCase() }
         : validateStudentNumber(loginStudentNumber);
       if (!numValidation.isValid) {
@@ -551,7 +552,7 @@ export const AuthPage: React.FC = () => {
                     <>
                       <div>
                         <md-outlined-text-field
-                          label="学号"
+                          label="学号 / 工号"
                           value={loginStudentNumber}
                           required
                           disabled={loading}
