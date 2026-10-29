@@ -181,7 +181,7 @@ describe('App Top Bar & Navigation', () => {
 
     // Switch to Tab 1 (个人中心)
     const navTabs = container.querySelectorAll('md-navigation-tab');
-    expect(navTabs.length).toBe(2);
+    expect(navTabs.length).toBe(3);
     const profileTab = navTabs[1];
     fireEvent.click(profileTab);
 
@@ -204,7 +204,7 @@ describe('App Top Bar & Navigation', () => {
     });
 
     const navTabs = container.querySelectorAll('md-navigation-tab');
-    expect(navTabs.length).toBe(2);
+    expect(navTabs.length).toBe(3);
 
     navTabs.forEach((tab) => {
       const activeIcon = tab.querySelector('md-icon[slot="active-icon"]');

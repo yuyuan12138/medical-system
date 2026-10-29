@@ -13,10 +13,12 @@ import { SegmentedButton } from './components/common/Buttons';
 import { AuthPage } from './pages/AuthPage';
 import { AssessmentsPage } from './pages/AssessmentsPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { ReferralsPage } from './pages/ReferralsPage';
+import { TeacherDispatchPage } from './pages/TeacherDispatchPage';
 import './utils/navigationTabStyles';
 
 export function AppContent() {
-  const { student, loading } = useAuth();
+  const { student, loading, role } = useAuth();
   const {
     totalCount,
     completedCount,
@@ -33,7 +35,11 @@ export function AppContent() {
   const [activeTab, setActiveTab] = useState(0);
   const mainRef = useRef<HTMLElement>(null);
 
+  const isTeacher = role === 'TEACHER' || role === 'HEAD_COUNSELLOR';
+  const tabCount = isTeacher ? 4 : 3;
+
   const handleTabChange = (tab: number) => {
+    if (tab >= tabCount) return;
     setActiveTab(tab);
     setIsScrolled(false);
     if (mainRef.current) {
@@ -166,7 +172,15 @@ export function AppContent() {
           }
         }}
       >
-        {activeTab === 0 ? <AssessmentsPage /> : <ProfilePage />}
+        {activeTab === 0 ? (
+          <AssessmentsPage />
+        ) : activeTab === (isTeacher ? 3 : 2) ? (
+          <ProfilePage />
+        ) : activeTab === 1 && isTeacher ? (
+          <TeacherDispatchPage />
+        ) : (
+          <ReferralsPage />
+        )}
       </main>
 
       {/* MD3 Bottom Navigation Bar - spans full width on wider screens with zero bottom gap */}
@@ -193,9 +207,25 @@ export function AppContent() {
             <md-icon slot="active-icon" filled style={{ fontVariationSettings: "'FILL' 1" } as any}>assignment</md-icon>
             <md-icon slot="inactive-icon">assignment</md-icon>
           </md-navigation-tab>
+          {isTeacher && (
+            <md-navigation-tab
+              label="发放问卷"
+              onClick={() => handleTabChange(2)}
+            >
+              <md-icon slot="active-icon" filled style={{ fontVariationSettings: "'FILL' 1" } as any}>send</md-icon>
+              <md-icon slot="inactive-icon">send</md-icon>
+            </md-navigation-tab>
+          )}
+          <md-navigation-tab
+            label="转诊进度"
+            onClick={() => handleTabChange(isTeacher ? 2 : 1)}
+          >
+            <md-icon slot="active-icon" filled style={{ fontVariationSettings: "'FILL' 1" } as any}>medical_information</md-icon>
+            <md-icon slot="inactive-icon">medical_information</md-icon>
+          </md-navigation-tab>
           <md-navigation-tab
             label="个人中心"
-            onClick={() => handleTabChange(1)}
+            onClick={() => handleTabChange(isTeacher ? 3 : 2)}
           >
             <md-icon slot="active-icon" filled style={{ fontVariationSettings: "'FILL' 1" } as any}>account_circle</md-icon>
             <md-icon slot="inactive-icon">account_circle</md-icon>

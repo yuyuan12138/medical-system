@@ -16,6 +16,73 @@ export interface AuthResponse {
   fullName?: string;
   phone?: string;
   student?: StudentDto;
+  role?: 'STUDENT' | 'TEACHER' | 'DOCTOR' | 'HEAD_COUNSELLOR' | 'ADMIN' | string;
+  name?: string;
+  userId?: number;
+}
+
+export interface ReferralDto {
+  id: string;
+  studentId: number;
+  studentName: string;
+  studentNumber: string;
+  type: string;
+  date: string;
+  title: string;
+  description: string;
+  riskLevel: 'HIGH' | 'MEDIUM' | 'LOW';
+  status: string;
+  referredBy: { name: string };
+}
+
+export interface ReferralDetailsDto {
+  baseInfo: ReferralDto;
+  triageInfo: {
+    isFirstVisit: boolean;
+    isMedicated: boolean;
+    priorTherapy: string;
+    scidDiagnosis?: string | null;
+    fullDescription: string;
+  };
+  riskAssessment: {
+    ideation: boolean;
+    attempt: boolean;
+    selfHarm: boolean;
+  };
+  feedback?: { content?: string } | null;
+}
+
+export interface ReferralTrackingDto {
+  destination?: {
+    hospital: string;
+    department: string;
+    doctor: string;
+    transferDate?: string | null;
+    appointmentTime?: string | null;
+  } | null;
+  steps?: {
+    type: string;
+    completedAt?: string | null;
+    operator?: string | null;
+    outcome?: string | null;
+  }[] | null;
+}
+
+export interface AssessmentCatalogItem {
+  batteryCode: string;
+  title: string;
+  subtitle?: string | null;
+  duration: string;
+  questionCount: number;
+  isEnabled: boolean;
+}
+
+export interface StaffStudentDto {
+  id: string;
+  studentNumber?: string;
+  name: string;
+  major: string;
+  riskLevel?: 'HIGH' | 'MEDIUM' | 'LOW';
 }
 
 export interface RegisterRequest {
@@ -270,5 +337,27 @@ export const intakeApi = {
   deleteDraft: (code: string) =>
     request<void>(`/api/scales/${code}/draft`, {
       method: 'DELETE',
+    }),
+
+  // Referrals (unified backend)
+  getReferrals: () => request<ReferralDto[]>('/api/referrals'),
+
+  getReferralDetails: (id: string) => request<ReferralDetailsDto>(`/api/referrals/${id}`),
+
+  getReferralTracking: (id: string) => request<ReferralTrackingDto>(`/api/referrals/${id}/tracking`),
+
+  // Teacher assessment dispatch
+  getAssessmentCatalog: () => request<AssessmentCatalogItem[]>('/api/assessments/catalog'),
+
+  getStaffStudents: () => request<StaffStudentDto[]>('/api/students'),
+
+  assignAssessment: (studentId: number, batteryCode: string, dueDate?: string) =>
+    request<{ assignedCount: number }>('/api/assessments/assign', {
+      method: 'POST',
+      body: JSON.stringify({
+        studentId,
+        batteryCodes: [batteryCode],
+        dueDate: dueDate || undefined,
+      }),
     }),
 };

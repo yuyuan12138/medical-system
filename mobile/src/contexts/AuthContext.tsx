@@ -4,6 +4,7 @@ import { intakeApi, tokenStorage, StudentDto, LoginRequest, RegisterRequest } fr
 export interface AuthContextType {
   student: StudentDto | null;
   token: string | null;
+  role: string | null;
   loading: boolean;
   login: (req: LoginRequest) => Promise<void>;
   loginWithSms: (phone: string, code: string) => Promise<void>;
@@ -17,6 +18,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [student, setStudent] = useState<StudentDto | null>(null);
   const [token, setToken] = useState<string | null>(tokenStorage.get());
+  const [role, setRole] = useState<string | null>(localStorage.getItem('mh_role'));
   const [loading, setLoading] = useState<boolean>(true);
 
   const refreshStudent = useCallback(async () => {
@@ -43,49 +45,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshStudent();
   }, [refreshStudent]);
 
-  const login = async (req: LoginRequest) => {
-    const res = await intakeApi.login(req);
+  const applyAuthResponse = (res: import('../api/intakeApi').AuthResponse, fallbackName?: string, fallbackPhone?: string) => {
     tokenStorage.set(res.token);
     setToken(res.token);
+    if (res.role) {
+      localStorage.setItem('mh_role', res.role);
+      setRole(res.role);
+    }
     const s = res.student;
     setStudent({
-      studentNumber: s?.studentNumber || res.studentNumber || req.identifier || req.studentNumber || '',
-      fullName: s?.fullName || res.fullName || '',
-      phone: s?.phone || res.phone || '',
+      studentNumber: s?.studentNumber || res.studentNumber || '',
+      fullName: s?.fullName || res.fullName || res.name || fallbackName || '',
+      phone: s?.phone || res.phone || fallbackPhone || '',
       registeredAt: (s as any)?.createdAt || (s as any)?.registeredAt || new Date().toISOString(),
     });
+  };
+
+  const login = async (req: LoginRequest) => {
+    const res = await intakeApi.login(req);
+    applyAuthResponse(res, req.identifier || req.studentNumber);
   };
 
   const loginWithSms = async (phone: string, code: string) => {
     const res = await intakeApi.loginWithSms(phone, code);
-    tokenStorage.set(res.token);
-    setToken(res.token);
-    const s = res.student;
-    setStudent({
-      studentNumber: s?.studentNumber || res.studentNumber || '',
-      fullName: s?.fullName || res.fullName || '',
-      phone: s?.phone || res.phone || phone,
-      registeredAt: (s as any)?.createdAt || (s as any)?.registeredAt || new Date().toISOString(),
-    });
+    applyAuthResponse(res, undefined, phone);
   };
 
   const register = async (req: RegisterRequest) => {
     const res = await intakeApi.register(req);
-    tokenStorage.set(res.token);
-    setToken(res.token);
-    const s = res.student;
-    setStudent({
-      studentNumber: s?.studentNumber || res.studentNumber || req.studentNumber || '',
-      fullName: s?.fullName || res.fullName || req.fullName || '',
-      phone: s?.phone || res.phone || req.phone || '',
-      registeredAt: (s as any)?.createdAt || (s as any)?.registeredAt || new Date().toISOString(),
-    });
+    applyAuthResponse(res, req.fullName, req.phone);
   };
 
   const logout = () => {
     tokenStorage.clear();
+    localStorage.removeItem('mh_role');
     setToken(null);
     setStudent(null);
+    setRole(null);
   };
 
   return (
@@ -93,6 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         student,
         token,
+        role,
         loading,
         login,
         loginWithSms,

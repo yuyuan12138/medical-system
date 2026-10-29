@@ -107,12 +107,13 @@ describe('StudentApp', () => {
     renderWithProviders({});
 
     const tabs = document.querySelectorAll('md-navigation-tab');
-    expect(tabs.length).toBe(2);
+    expect(tabs.length).toBe(3);
     expect((tabs[0] as any).label ?? tabs[0].getAttribute('label')).toBe('问卷测评');
-    expect((tabs[1] as any).label ?? tabs[1].getAttribute('label')).toBe('个人中心');
+    expect((tabs[1] as any).label ?? tabs[1].getAttribute('label')).toBe('转诊进度');
+    expect((tabs[2] as any).label ?? tabs[2].getAttribute('label')).toBe('个人中心');
 
     // Click on 个人中心 tab
-    fireEvent.click(tabs[1]);
+    fireEvent.click(tabs[2]);
 
     // Verify Profile view is displayed
     expect(screen.getByText('个人信息')).toBeDefined();
