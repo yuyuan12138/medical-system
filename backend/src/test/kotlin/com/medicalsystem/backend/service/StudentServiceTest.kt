@@ -34,6 +34,9 @@ class StudentServiceTest {
     
     @Mock
     private lateinit var healthProfileRepository: StudentHealthProfileRepository
+
+    @Mock
+    private lateinit var studentHealthProfileJpaRepository: com.medicalsystem.backend.repository.StudentHealthProfileJpaRepository
     
     @Mock
     private lateinit var eventPublisher: DomainEventPublisher
@@ -59,6 +62,35 @@ class StudentServiceTest {
 
         assertEquals(1, result.size)
         assertEquals("1", result[0].id)
+    }
+
+    @Test
+    fun `fetchHighRiskStudents returns only visible flagged students sorted high first`() {
+        val user = com.medicalsystem.backend.model.User(1L, "HC", com.medicalsystem.backend.model.EmailAddress("hc@t.com"), null, com.medicalsystem.backend.model.UserRole.HEAD_COUNSELLOR)
+        val college = College(1L, "Engineering")
+        val major = Major(1L, "CS", college)
+        val s1 = Student(1L, "S001", "High Student", major, LocalDate.of(2023, 9, 1), RiskStatus.HIGH, null)
+        val s2 = Student(2L, "S002", "Medium Student", major, LocalDate.of(2023, 9, 1), RiskStatus.MEDIUM, null)
+        val s3 = Student(3L, "S003", "Invisible", major, LocalDate.of(2023, 9, 1), RiskStatus.HIGH, null)
+        val flag = com.medicalsystem.backend.entity.RiskFlagEntity(
+            id = 10L,
+            name = com.medicalsystem.backend.model.RiskFlagName.SUICIDAL_IDEATION,
+            status = com.medicalsystem.backend.model.FlagStatus.POSITIVE,
+            healthProfile = null
+        )
+        fun profile(studentId: Long, status: RiskStatus, flags: List<com.medicalsystem.backend.entity.RiskFlagEntity>) =
+            com.medicalsystem.backend.entity.StudentHealthProfileEntity(id = studentId, studentId = studentId, riskStatus = status, riskFlags = flags.toMutableList())
+
+        `when`(studentRepository.findVisibleStudentsFor(user)).thenReturn(listOf(s1, s2))
+        `when`(studentHealthProfileJpaRepository.findByRiskStatusIn(listOf(RiskStatus.HIGH, RiskStatus.MEDIUM)))
+            .thenReturn(listOf(profile(2, RiskStatus.MEDIUM, emptyList()), profile(1, RiskStatus.HIGH, listOf(flag)), profile(3, RiskStatus.HIGH, emptyList())))
+        `when`(studentRepository.findAllById(setOf(1L, 2L, 3L))).thenReturn(listOf(s1, s2, s3))
+
+        val result = studentService.fetchHighRiskStudents(user, includeMedium = true)
+
+        assertEquals(listOf("High Student", "Medium Student"), result.map { it.studentName })
+        assertEquals(RiskStatus.HIGH, result[0].riskStatus)
+        assertEquals(listOf("SUICIDAL_IDEATION"), result[0].riskFlags)
     }
 
     @Test

@@ -34,6 +34,15 @@ class StudentController(private val studentService: StudentService) {
         return studentService.registerStudent(dto)
     }
 
+    @GetMapping("/high-risk")
+    fun fetchHighRiskStudents(
+        @RequestParam(defaultValue = "false") includeMedium: Boolean,
+        @CurrentUser user: User?
+    ): List<com.medicalsystem.backend.dto.HighRiskStudentDto> {
+        if (user == null) throw ForbiddenException("Authorized user not found")
+        return studentService.fetchHighRiskStudents(user, includeMedium)
+    }
+
     @GetMapping("/{id}/psychometrics")
     fun fetchPsychometricSummary(@PathVariable id: Long, @CurrentUser user: User?): com.medicalsystem.backend.dto.PsychometricsSummaryDto {
         if (user == null) throw ForbiddenException("Authorized user not found")

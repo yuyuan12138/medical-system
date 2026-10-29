@@ -23,7 +23,8 @@ class StudentService(
     private val studentMapper: StudentMapper,
     private val healthProfileRepository: StudentHealthProfileRepository,
     private val eventPublisher: com.medicalsystem.backend.event.DomainEventPublisher,
-    private val psychometricSummaryMapper: com.medicalsystem.backend.mapper.PsychometricSummaryMapper
+    private val psychometricSummaryMapper: com.medicalsystem.backend.mapper.PsychometricSummaryMapper,
+    private val studentHealthProfileJpaRepository: com.medicalsystem.backend.repository.StudentHealthProfileJpaRepository
 ) {
     private val logger = LoggerFactory.getLogger(StudentService::class.java)
 
@@ -75,6 +76,32 @@ class StudentService(
     }
 
     @Transactional(readOnly = true)
+    fun fetchHighRiskStudents(user: com.medicalsystem.backend.model.User, includeMedium: Boolean): List<com.medicalsystem.backend.dto.HighRiskStudentDto> {
+        val statuses = if (includeMedium) {
+            listOf(com.medicalsystem.backend.model.RiskStatus.HIGH, com.medicalsystem.backend.model.RiskStatus.MEDIUM)
+        } else {
+            listOf(com.medicalsystem.backend.model.RiskStatus.HIGH)
+        }
+        val profiles = studentHealthProfileJpaRepository.findByRiskStatusIn(statuses)
+        if (profiles.isEmpty()) return emptyList()
+        val visibleIds = studentRepository.findVisibleStudentsFor(user).map { it.id }.toSet()
+        val students = studentRepository.findAllById(profiles.map { it.studentId }.toSet()).associateBy { it.id }
+        return profiles
+            .filter { visibleIds.contains(it.studentId) && students.containsKey(it.studentId) }
+            .map { profile ->
+                val student = students.getValue(profile.studentId)
+                com.medicalsystem.backend.dto.HighRiskStudentDto(
+                    studentId = profile.studentId,
+                    studentName = student.name,
+                    studentNumber = student.studentNumber,
+                    riskStatus = profile.riskStatus,
+                    riskFlags = profile.riskFlags.filter { f -> f.status == com.medicalsystem.backend.model.FlagStatus.POSITIVE }.map { it.name.name },
+                    scidDiagnosis = profile.scidDiagnosis
+                )
+            }
+            .sortedWith(compareBy({ it.riskStatus != com.medicalsystem.backend.model.RiskStatus.HIGH }, { it.studentNumber }))
+    }
+
     fun fetchPsychometricSummary(id: Long, user: com.medicalsystem.backend.model.User): com.medicalsystem.backend.dto.PsychometricsSummaryDto {
         val entity = studentRepository.findByIdAndVisibleTo(id, user)
             .orElseThrow {

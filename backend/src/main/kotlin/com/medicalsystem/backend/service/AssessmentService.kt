@@ -281,7 +281,15 @@ class AssessmentService(
         }
 
         // 3. Clinical Risk Evaluation (runs before event publishing so AFTER_COMMIT listeners see updated riskStatus)
-        clinicalRiskEvaluator?.evaluateRisk(assignment.studentId, answersMap, completedTests)
+        val riskResult = clinicalRiskEvaluator?.evaluateRisk(assignment.studentId, answersMap, completedTests)
+        if (riskResult != null) {
+            assignment.severity = when (riskResult.riskStatus) {
+                com.medicalsystem.backend.model.RiskStatus.HIGH -> com.medicalsystem.backend.model.ResultSeverity.HIGH
+                com.medicalsystem.backend.model.RiskStatus.MEDIUM -> com.medicalsystem.backend.model.ResultSeverity.MODERATE
+                com.medicalsystem.backend.model.RiskStatus.LOW -> com.medicalsystem.backend.model.ResultSeverity.LOW
+            }
+            assignmentRepository.save(assignment)
+        }
 
         assignment.getDomainEvents().forEach { domainEventPublisher?.publish(it) }
         assignment.clearDomainEvents()

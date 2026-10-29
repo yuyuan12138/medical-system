@@ -10,4 +10,7 @@ interface StudentHealthProfileJpaRepository : JpaRepository<StudentHealthProfile
     
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = ["psychometricTests"])
     fun findByStudentId(studentId: Long): Optional<StudentHealthProfileEntity>
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = ["riskFlags"])
+    fun findByRiskStatusIn(statuses: Collection<com.medicalsystem.backend.model.RiskStatus>): List<StudentHealthProfileEntity>
 }
