@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository
 @Repository
 interface StudentJpaRepository : JpaRepository<StudentEntity, Long>, JpaSpecificationExecutor<StudentEntity> {
     fun existsByStudentNumber(studentNumber: String): Boolean
+    @Query("SELECT COUNT(s) FROM StudentEntity s WHERE s.id <> :studentId AND s.demographics.idCardNumber = :idCard")
+    fun countOthersByIdCardNumber(studentId: Long, idCard: String): Long
     fun findByStudentNumber(studentNumber: String): StudentEntity?
     fun findByMajorCollegeId(collegeId: Long): List<StudentEntity>
     fun countByMajorId(majorId: Long): Long

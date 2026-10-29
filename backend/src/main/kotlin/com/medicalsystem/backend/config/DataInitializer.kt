@@ -39,6 +39,10 @@ class DataInitializer {
         assessmentAssignmentRepository: AssessmentAssignmentJpaRepository,
         jdbcTemplate: JdbcTemplate
     ) = CommandLineRunner {
+        val seedEnabled = System.getenv("SEED_DEMO_DATA")?.equals("true", ignoreCase = true) ?: true
+        if (!seedEnabled) {
+            return@CommandLineRunner
+        }
         try {
             jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 0")
             val tables = jdbcTemplate.queryForList("SHOW TABLES", String::class.java)
