@@ -1,0 +1,237 @@
+{
+  "baseUrl": "http://47.117.156.53:7080",
+  "ranAt": "2026-10-30T07:01:08.485Z",
+  "pass": 38,
+  "fail": 0,
+  "skip": 0,
+  "results": [
+    {
+      "scenario": "S1 auth & permission boundaries",
+      "name": "teacher login ok (EMP-00001)",
+      "status": "PASS",
+      "detail": "{\"token\":\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxIiwicm9sZSI6IlRFQUNIRVIiLCJpYXQiOjE3OTMzNDM2NjAsImV4cCI6MTc5Mzk0ODQ2MCwic3R1Z"
+    },
+    {
+      "scenario": "S1 auth & permission boundaries",
+      "name": "hc login ok (HC-00001)",
+      "status": "PASS",
+      "detail": "{\"token\":\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxNiIsInJvbGUiOiJIRUFEX0NPVU5TRUxMT1IiLCJpYXQiOjE3OTMzNDM2NjAsImV4cCI6MTc5Mzk0O"
+    },
+    {
+      "scenario": "S1 auth & permission boundaries",
+      "name": "doctor login ok (DOC-00001)",
+      "status": "PASS",
+      "detail": "{\"token\":\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxNCIsInJvbGUiOiJET0NUT1IiLCJpYXQiOjE3OTMzNDM2NjAsImV4cCI6MTc5Mzk0ODQ2MCwic3R1Z"
+    },
+    {
+      "scenario": "S1 auth & permission boundaries",
+      "name": "admin login ok (TA-00001)",
+      "status": "PASS",
+      "detail": "{\"token\":\"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIxMyIsInJvbGUiOiJUUklBTF9BRE1JTiIsImlhdCI6MTc5MzM0MzY2MSwiZXhwIjoxNzkzOTQ4NDYxL"
+    },
+    {
+      "scenario": "S1 auth & permission boundaries",
+      "name": "wrong password -> 401",
+      "status": "PASS",
+      "detail": "got 401"
+    },
+    {
+      "scenario": "S1 auth & permission boundaries",
+      "name": "unknown user -> 401",
+      "status": "PASS",
+      "detail": "got 401"
+    },
+    {
+      "scenario": "S1 auth & permission boundaries",
+      "name": "teacher cannot write diagnosis (403)",
+      "status": "PASS",
+      "detail": "got 403"
+    },
+    {
+      "scenario": "S1 auth & permission boundaries",
+      "name": "student high-risk access blocked or visibility-filtered",
+      "status": "PASS",
+      "detail": "got 200 body=[]"
+    },
+    {
+      "scenario": "S2 teacher dispatch visible to student",
+      "name": "dispatch accepted (201)",
+      "status": "PASS",
+      "detail": "assignedCount=1"
+    },
+    {
+      "scenario": "S2 teacher dispatch visible to student",
+      "name": "student scale list 200",
+      "status": "PASS",
+      "detail": "got 200"
+    },
+    {
+      "scenario": "S2 teacher dispatch visible to student",
+      "name": "dispatched scale visible to student",
+      "status": "PASS",
+      "detail": "[{\"code\":\"comprehensive_student_intake_survey\",\"title\":\"中南大学学生心身健康综合调查问卷\",\"subtitle\":\"2025-2026 学年学生心身健康普查与档案建立\",\"description\":\"科技部科技创新2030脑科学与类脑研究学生人"
+    },
+    {
+      "scenario": "S2 teacher dispatch visible to student",
+      "name": "scale status NOT_STARTED/IN_PROGRESS/COMPLETED",
+      "status": "PASS",
+      "detail": "COMPLETED"
+    },
+    {
+      "scenario": "S3 draft + low-risk submission",
+      "name": "draft save 200/204",
+      "status": "PASS",
+      "detail": "got 204"
+    },
+    {
+      "scenario": "S3 draft + low-risk submission",
+      "name": "low submit -> COMPLETED",
+      "status": "PASS",
+      "detail": "200 {\"scaleCode\":\"comprehensive_student_intake_survey\",\"status\":\"COMPLETED\",\"completedAt\":\"2026-10-30T07:01:02.541418287\"}"
+    },
+    {
+      "scenario": "S3 draft + low-risk submission",
+      "name": "low-risk student absent from strict high-risk list",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "scenario": "S4 medium-risk banding (phq9 = 10)",
+      "name": "medium submit -> COMPLETED",
+      "status": "PASS",
+      "detail": "200 {\"scaleCode\":\"comprehensive_student_intake_survey\",\"status\":\"COMPLETED\",\"completedAt\":\"2026-10-30T07:01:03.300800089\"}"
+    },
+    {
+      "scenario": "S4 medium-risk banding (phq9 = 10)",
+      "name": "medium student absent when includeMedium=false",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "scenario": "S4 medium-risk banding (phq9 = 10)",
+      "name": "medium student present when includeMedium=true",
+      "status": "PASS",
+      "detail": "[\"S2023001\",\"S2023005\",\"S2023008\",\"S2023007\"]"
+    },
+    {
+      "scenario": "S5 acute flag forces HIGH (phq9_9 = 1)",
+      "name": "acute submit -> COMPLETED",
+      "status": "PASS",
+      "detail": "200"
+    },
+    {
+      "scenario": "S5 acute flag forces HIGH (phq9_9 = 1)",
+      "name": "acute student in high-risk list",
+      "status": "PASS",
+      "detail": "[\"S2023001\",\"S2023005\",\"S2023008\",\"S2023007\"]"
+    },
+    {
+      "scenario": "S5 acute flag forces HIGH (phq9_9 = 1)",
+      "name": "SUICIDAL_IDEATION flag present",
+      "status": "PASS",
+      "detail": "[\"SUICIDAL_IDEATION\"]"
+    },
+    {
+      "scenario": "S5 acute flag forces HIGH (phq9_9 = 1)",
+      "name": "HIGH entries ordered before MEDIUM",
+      "status": "PASS",
+      "detail": "firstMedium=3 lastHigh=2"
+    },
+    {
+      "scenario": "S6 referral lifecycle",
+      "name": "HC creates referral (201)",
+      "status": "PASS",
+      "detail": "201 {\"id\":\"7\",\"studentId\":10,\"studentName\":\"吴东\",\"studentNumber\":\"S2023008\",\"type\":\"INITIAL\",\"date\":\"2026-10-30T07:01:04.446349708\",\"title\":\"E2E危机转诊 2026-1"
+    },
+    {
+      "scenario": "S6 referral lifecycle",
+      "name": "hospitals list 200",
+      "status": "PASS",
+      "detail": "200"
+    },
+    {
+      "scenario": "S6 referral lifecycle",
+      "name": "HC approves referral",
+      "status": "PASS",
+      "detail": "AWAITING_TRIAGE"
+    },
+    {
+      "scenario": "S6 referral lifecycle",
+      "name": "doctors list 200",
+      "status": "PASS",
+      "detail": "200"
+    },
+    {
+      "scenario": "S6 referral lifecycle",
+      "name": "trial admin assigns doctor",
+      "status": "PASS",
+      "detail": "WAITING_FOR_SCHEDULING"
+    },
+    {
+      "scenario": "S6 referral lifecycle",
+      "name": "doctor schedules appointment",
+      "status": "PASS",
+      "detail": "WAITING_FOR_APPOINTMENT"
+    },
+    {
+      "scenario": "S6 referral lifecycle",
+      "name": "student sees referral in list",
+      "status": "PASS",
+      "detail": "[\"4\",\"5\",\"6\",\"7\"]"
+    },
+    {
+      "scenario": "S6 referral lifecycle",
+      "name": "student tracking 200 with steps",
+      "status": "PASS",
+      "detail": "200 {\"destination\":{\"hospital\":\"中南大学湘雅医院\",\"department\":\"内科\",\"doctor\":\"李医生\",\"admin\":\"张老师\",\"transferDate\":null,\"appointmentTim"
+    },
+    {
+      "scenario": "S7 doctor diagnosis write + propagation",
+      "name": "doctor saves diagnosis (200)",
+      "status": "PASS",
+      "detail": "200"
+    },
+    {
+      "scenario": "S7 doctor diagnosis write + propagation",
+      "name": "student referral details show diagnosis",
+      "status": "PASS",
+      "detail": "{\"priorTherapy\":\"无\",\"scidDiagnosis\":\"E2E诊断 2026-10-30T07:01:05.462Z\",\"fullDescription\":\"E2E: PHQ-9 item 9 positive, acute flag\",\"firstVisit\":false,\"me"
+    },
+    {
+      "scenario": "S7 doctor diagnosis write + propagation",
+      "name": "high-risk list shows diagnosis",
+      "status": "PASS",
+      "detail": "\"E2E诊断 2026-10-30T07:01:05.462Z\""
+    },
+    {
+      "scenario": "S8 duplicate id-card regression (no 500)",
+      "name": "S2023009 submit with shared id-card -> 200",
+      "status": "PASS",
+      "detail": "got 200"
+    },
+    {
+      "scenario": "S8 duplicate id-card regression (no 500)",
+      "name": "S2023010 submit with shared id-card -> 200",
+      "status": "PASS",
+      "detail": "got 200"
+    },
+    {
+      "scenario": "S9 concurrency smoke (8 parallel sessions)",
+      "name": "8 parallel login+detail+draft all 200",
+      "status": "PASS",
+      "detail": "true,true,true,true,true,true,true,true"
+    },
+    {
+      "scenario": "S10 HC notifications after high-risk submit",
+      "name": "notifications 200",
+      "status": "PASS",
+      "detail": "got 200"
+    },
+    {
+      "scenario": "S10 HC notifications after high-risk submit",
+      "name": "high-risk alert notification present",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}
