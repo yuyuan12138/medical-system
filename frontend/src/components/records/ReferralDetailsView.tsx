@@ -11,7 +11,7 @@ import { ReferralFeedbackTab } from './ReferralFeedbackTab';
 
 import { useDetails } from '../../contexts/DetailsContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { enrichReferralStatus } from '../../utils/referralUtils';
 import { useReferralActions } from '../../hooks/useReferralActions';
 import { ReferralActionFooter } from './ReferralActionFooter';
@@ -106,7 +106,7 @@ export function ReferralDetailsView(props: ReferralDetailsViewProps) {
     };
   }, [setHeaderOverride, props.referral, handleTabChange]);
 
-  const { data: referralDetails, isLoading } = useQuery<ReferralDetails>({
+  const { data: referralDetails, isLoading, refetch } = useQuery<ReferralDetails>({
     queryKey: ['/api/referrals', props.referral.id, 'details'],
     queryFn: async () => {
       const res = await fetch(`${import.meta.env.BASE_URL}/api/referrals/${props.referral.id}`.replace('//api', '/api'), {
@@ -159,6 +159,7 @@ function ReferralDetailsPresenter({ referral, referralDetails, userRole, hideHea
   const { state, actions } = useReferralActions({ referralId: referral.id, onUpdate });
 
   const { session } = useAuth();
+  const queryClient = useQueryClient();
   
   const { data: doctors = [] } = useQuery({
     queryKey: ['/api/doctors'],
@@ -290,6 +291,8 @@ function ReferralDetailsPresenter({ referral, referralDetails, userRole, hideHea
                 studentNumber: referral.studentNumber,
                 scidDiagnosis: referralDetails.triageInfo?.scidDiagnosis
               }}
+              canEditDiagnosis={['doctor', 'head-councillor', 'admin'].includes(session?.role ?? '')}
+              onDiagnosisUpdated={() => queryClient.invalidateQueries({ queryKey: ['/api/referrals', String(referral.id)] })}
             />
           </motion.div>
         )}

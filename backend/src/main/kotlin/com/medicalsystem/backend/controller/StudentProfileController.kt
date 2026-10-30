@@ -9,6 +9,10 @@ import com.medicalsystem.backend.model.User
 import com.medicalsystem.backend.repository.AssessmentAssignmentJpaRepository
 import com.medicalsystem.backend.repository.StudentJpaRepository
 import com.medicalsystem.backend.repository.UserJpaRepository
+import com.medicalsystem.backend.repository.StudentHealthProfileJpaRepository
+import com.medicalsystem.backend.model.RiskStatus
+import com.medicalsystem.backend.model.UserRole
+import com.medicalsystem.backend.exception.ForbiddenException
 import com.medicalsystem.backend.security.CurrentUser
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -20,8 +24,36 @@ import org.springframework.web.bind.annotation.RestController
 class StudentProfileController(
     private val studentJpaRepository: StudentJpaRepository,
     private val userJpaRepository: UserJpaRepository,
-    private val assignmentJpaRepository: AssessmentAssignmentJpaRepository
+    private val assignmentJpaRepository: AssessmentAssignmentJpaRepository,
+    private val studentHealthProfileJpaRepository: StudentHealthProfileJpaRepository
 ) {
+
+    data class UpdateHealthProfileDto(
+        val scidDiagnosis: String?,
+        val riskStatus: RiskStatus? = null
+    )
+
+    @org.springframework.web.bind.annotation.PutMapping("/{id}/health-profile")
+    fun updateHealthProfile(
+        @org.springframework.web.bind.annotation.PathVariable id: Long,
+        @org.springframework.web.bind.annotation.RequestBody dto: UpdateHealthProfileDto,
+        @CurrentUser user: User?
+    ): ResponseEntity<Map<String, String>> {
+        val currentUser = user ?: throw UnauthorizedException("Unauthorized")
+        if (currentUser.role !in listOf(UserRole.DOCTOR, UserRole.HEAD_COUNSELLOR, UserRole.SYSTEM_ADMIN)) {
+            throw ForbiddenException("Only doctors and head counsellors can update clinical diagnosis")
+        }
+        if (!studentJpaRepository.existsById(id)) {
+            throw NotFoundException("Student not found for id $id")
+        }
+        val profile = studentHealthProfileJpaRepository.findByStudentId(id).orElseGet {
+            com.medicalsystem.backend.entity.StudentHealthProfileEntity(studentId = id, riskStatus = RiskStatus.LOW)
+        }
+        dto.scidDiagnosis?.let { profile.scidDiagnosis = it }
+        dto.riskStatus?.let { profile.riskStatus = it }
+        studentHealthProfileJpaRepository.save(profile)
+        return ResponseEntity.ok(mapOf("status" to "updated"))
+    }
 
     @GetMapping("/me/profile")
     fun getMyProfile(@CurrentUser user: User?): ResponseEntity<StudentProfileResponseDto> {

@@ -15,9 +15,13 @@ import {
   PolarGrid,
   PolarAngleAxis
 } from 'recharts';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface PsychometricsTabContentProps {
   student: any;
+  canEditDiagnosis?: boolean;
+  onDiagnosisUpdated?: () => void;
 }
 
 const MemoizedLineChart = React.memo(({ scores }: { scores: any[] }) => (
@@ -78,11 +82,8 @@ const MemoizedRadarChart = React.memo(({ radarData }: { radarData: any[] }) => (
   </RadarChart>
 ));
 
-import { useQuery } from '@tanstack/react-query';
 
-import { useAuth } from '../../contexts/AuthContext';
-
-export function PsychometricsTabContent({ student }: PsychometricsTabContentProps) {
+export function PsychometricsTabContent({ student, canEditDiagnosis, onDiagnosisUpdated }: PsychometricsTabContentProps) {
   const { session } = useAuth();
   const { data, isLoading: loading, error } = useQuery({
     queryKey: ['psychometrics', student?.id, session.token],
@@ -97,6 +98,38 @@ export function PsychometricsTabContent({ student }: PsychometricsTabContentProp
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
+  const [draftDiagnosis, setDraftDiagnosis] = React.useState<string | null>(null);
+  const [diagnosisSaving, setDiagnosisSaving] = React.useState(false);
+  const [diagnosisSaved, setDiagnosisSaved] = React.useState(false);
+  const [diagnosisError, setDiagnosisError] = React.useState<string | null>(null);
+
+  const queryClient = useQueryClient();
+
+  const handleSaveDiagnosis = async () => {
+    if (draftDiagnosis === null || !student?.id) return;
+    setDiagnosisSaving(true);
+    setDiagnosisError(null);
+    setDiagnosisSaved(false);
+    try {
+      const res = await fetch(
+        `${import.meta.env.BASE_URL}/api/students/${student.id}/health-profile`.replace('//api', '/api'),
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
+          body: JSON.stringify({ scidDiagnosis: draftDiagnosis.trim() })
+        }
+      );
+      if (!res.ok) throw new Error(`保存失败 (${res.status})`);
+      setDiagnosisSaved(true);
+      await queryClient.invalidateQueries({ queryKey: ['psychometrics', student.id] });
+      onDiagnosisUpdated?.();
+    } catch (e: any) {
+      setDiagnosisError(e?.message || '保存失败');
+    } finally {
+      setDiagnosisSaving(false);
+    }
+  };
+
   if (loading) {
     return <div className="py-8 text-center text-sm text-[var(--md-sys-color-on-surface-variant)] opacity-60">加载中...</div>;
   }
@@ -110,10 +143,32 @@ export function PsychometricsTabContent({ student }: PsychometricsTabContentProp
       {data.scidDiagnosis || (data.riskFlags && data.riskFlags.length > 0) ? (
         <DetailsSection title="临床实际情况" icon="psychology">
           <div className="flex flex-col gap-5">
-            {data.scidDiagnosis && (
+            {(data.scidDiagnosis || canEditDiagnosis) && (
               <div className="flex flex-col gap-1.5 p-4 rounded-2xl bg-[var(--md-sys-color-surface-container-low)]">
                 <span className="text-[12px] font-bold text-[var(--md-sys-color-on-surface-variant)] uppercase tracking-widest opacity-70">SCID诊断</span>
-                <span className="text-[16px] font-medium text-[var(--md-sys-color-on-surface)]">{data.scidDiagnosis}</span>
+                {canEditDiagnosis ? (
+                  <div className="flex flex-col gap-2">
+                    <textarea
+                      className="w-full min-h-[72px] p-3 rounded-xl text-[14px] bg-[var(--md-sys-color-surface)] border border-[var(--md-sys-color-outline-variant)] outline-none focus:border-[var(--md-sys-color-primary)] resize-y"
+                      placeholder="填写SCID诊断结论，保存后学生端与高危名单即时可见"
+                      defaultValue={data.scidDiagnosis || ''}
+                      onChange={e => setDraftDiagnosis(e.target.value)}
+                    />
+                    <div className="flex items-center gap-3">
+                      <button
+                        className="px-4 py-2 rounded-full bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] text-[13px] font-medium disabled:opacity-50"
+                        disabled={diagnosisSaving}
+                        onClick={handleSaveDiagnosis}
+                      >
+                        {diagnosisSaving ? '保存中…' : '保存诊断'}
+                      </button>
+                      {diagnosisSaved && <span className="text-[12px] text-[var(--md-sys-color-on-surface-variant)]">已保存</span>}
+                      {diagnosisError && <span className="text-[12px] text-[var(--md-sys-color-error)]">{diagnosisError}</span>}
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-[16px] font-medium text-[var(--md-sys-color-on-surface)]">{data.scidDiagnosis}</span>
+                )}
               </div>
             )}
 
