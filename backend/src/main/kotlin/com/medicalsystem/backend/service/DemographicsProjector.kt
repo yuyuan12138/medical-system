@@ -60,7 +60,9 @@ class DemographicsProjector(
         if (birthday != null) currentDemo.dateOfBirth = birthday
         if (ethnicityEntity != null) currentDemo.ethnicity = ethnicityEntity
         if (idCard != null) {
-            val conflicting = studentJpaRepository?.countOthersByIdCardNumber(student.id!!, idCard)?.let { it > 0 } ?: false
+            val conflicting = student.id
+                ?.let { id -> studentJpaRepository?.countOthersByIdCardNumber(id, idCard) }
+                ?.let { it > 0 } ?: false
             if (!conflicting) {
                 currentDemo.idCardNumber = idCard
             }

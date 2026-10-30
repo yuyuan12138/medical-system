@@ -290,9 +290,9 @@ class AssessmentService(
         val riskResult = clinicalRiskEvaluator?.evaluateRisk(assignment.studentId, answersMap, completedTests)
         if (riskResult != null) {
             assignment.severity = when (riskResult.riskStatus) {
-                com.medicalsystem.backend.model.RiskStatus.HIGH -> com.medicalsystem.backend.model.ResultSeverity.HIGH
-                com.medicalsystem.backend.model.RiskStatus.MEDIUM -> com.medicalsystem.backend.model.ResultSeverity.MODERATE
-                com.medicalsystem.backend.model.RiskStatus.LOW -> com.medicalsystem.backend.model.ResultSeverity.LOW
+                RiskStatus.HIGH -> ResultSeverity.HIGH
+                RiskStatus.MEDIUM -> ResultSeverity.MODERATE
+                RiskStatus.LOW -> ResultSeverity.LOW
             }
             assignmentRepository.save(assignment)
         }
