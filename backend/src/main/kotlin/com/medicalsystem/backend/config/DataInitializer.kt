@@ -10,12 +10,76 @@ import com.medicalsystem.backend.entity.ReferralDestinationEntity
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Configuration
 class DataInitializer {
+
+    companion object {
+        private val log = LoggerFactory.getLogger(DataInitializer::class.java)
+
+        const val SEED_DEMO_DATA_ENV = "SEED_DEMO_DATA"
+        const val SEED_WIPE_ALL_TABLES_ENV = "SEED_WIPE_ALL_TABLES"
+        const val SEED_WIPE_MAX_STUDENTS_ENV = "SEED_WIPE_MAX_STUDENTS"
+
+        /**
+         * The destructive wipe path refuses when the student table holds MORE rows than this.
+         * Demo seeding creates exactly 10 students, so any real deployment of this platform
+         * far exceeds the limit. Overridable via [SEED_WIPE_MAX_STUDENTS_ENV].
+         */
+        const val DEFAULT_MAX_STUDENTS_BEFORE_REFUSING: Long = 25
+    }
+
+    /**
+     * Pure, database-free decision logic for boot seeding. Deliberately extracted from the
+     * CommandLineRunner so the fail-closed wipe guard can be unit-tested without side effects
+     * (see DataInitializerGuardTest).
+     */
+    class SeedWipePolicy(
+        val seedEnabled: Boolean,
+        val wipeRequested: Boolean,
+        val maxStudentsBeforeRefusing: Long
+    ) {
+        sealed class Decision {
+            /** Nothing runs: no TRUNCATE, no inserts. [reason] is logged. */
+            class NoOp(val reason: String) : Decision()
+
+            /** Insert demo data into an empty database. Never truncates. */
+            class SeedOnly : Decision()
+
+            /** The ONLY path that may TRUNCATE; reachable only after the guard allowed the wipe. */
+            class WipeAndSeed(val studentRows: Long) : Decision()
+
+            /** Destructive wipe refused (fail closed): no TRUNCATE, no inserts. */
+            class Refused(val reason: String) : Decision()
+        }
+
+        fun decide(studentRowCount: Long): Decision {
+            if (!seedEnabled) {
+                return Decision.NoOp("$SEED_DEMO_DATA_ENV is not true: seeding disabled")
+            }
+            if (wipeRequested) {
+                return if (studentRowCount > maxStudentsBeforeRefusing) {
+                    Decision.Refused(
+                        "$SEED_WIPE_ALL_TABLES_ENV is true but the student table already holds " +
+                            "$studentRowCount rows (limit $maxStudentsBeforeRefusing). This looks like " +
+                            "real data, not a demo database, so TRUNCATE is refused (fail closed). " +
+                            "Only raise ${SEED_WIPE_MAX_STUDENTS_ENV} after verifying every row is disposable."
+                    )
+                } else {
+                    Decision.WipeAndSeed(studentRowCount)
+                }
+            }
+            return if (studentRowCount == 0L) {
+                Decision.SeedOnly()
+            } else {
+                Decision.NoOp("student table already holds $studentRowCount rows: demo seeding skipped")
+            }
+        }
+    }
 
     @Bean
     fun initData(
@@ -39,36 +103,71 @@ class DataInitializer {
         assessmentAssignmentRepository: AssessmentAssignmentJpaRepository,
         jdbcTemplate: JdbcTemplate
     ) = CommandLineRunner {
-        val seedEnabled = System.getenv("SEED_DEMO_DATA")?.equals("true", ignoreCase = true) ?: true
-        if (!seedEnabled) {
+        // Two deliberately separate switches: inserting demo rows (SEED_DEMO_DATA) and
+        // destroying the entire database (SEED_WIPE_ALL_TABLES) must never share one flag.
+        // Defaults: seed-if-empty ON, destructive wipe OFF. A restart must never truncate.
+        val seedEnabled = System.getenv(SEED_DEMO_DATA_ENV)?.equals("true", ignoreCase = true) ?: true
+        val wipeRequested = System.getenv(SEED_WIPE_ALL_TABLES_ENV)?.equals("true", ignoreCase = true) ?: false
+        val maxStudentsBeforeRefusing = System.getenv(SEED_WIPE_MAX_STUDENTS_ENV)?.toLongOrNull()
+            ?: DEFAULT_MAX_STUDENTS_BEFORE_REFUSING
+
+        val studentRows: Long = try {
+            studentRepository.count()
+        } catch (e: Exception) {
+            // Fail closed: if the student table cannot be inspected, assume real data and do nothing.
+            log.error("Boot seed: failed to inspect student table; failing closed (no TRUNCATE, no seeding).", e)
             return@CommandLineRunner
         }
-        try {
-            jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 0")
-            val tables = jdbcTemplate.queryForList("SHOW TABLES", String::class.java)
-            tables.forEach { table ->
-                jdbcTemplate.execute("TRUNCATE TABLE $table")
+
+        val decision = SeedWipePolicy(seedEnabled, wipeRequested, maxStudentsBeforeRefusing).decide(studentRows)
+        when (decision) {
+            is SeedWipePolicy.Decision.SeedOnly ->
+                log.info("Boot seed mode: SEED-IF-EMPTY. Student table is empty; inserting demo data. No tables will be truncated.")
+            is SeedWipePolicy.Decision.WipeAndSeed -> {
+                log.warn(
+                    "Boot seed mode: WIPE-AND-SEED (destructive, explicitly opted in). " +
+                        "Only {} student rows present (limit {}); TRUNCATE-ing every table.",
+                    decision.studentRows, maxStudentsBeforeRefusing
+                )
+                try {
+                    jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 0")
+                    val tables = jdbcTemplate.queryForList("SHOW TABLES", String::class.java)
+                    tables.forEach { table ->
+                        jdbcTemplate.execute("TRUNCATE TABLE $table")
+                    }
+                    jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 1")
+                } catch (e: Exception) {
+                    // H2 doesn't support SHOW TABLES / TRUNCATE in the same way; fallback to repository deleteAll
+                    log.warn("Boot seed mode: SQL TRUNCATE path unavailable ({}); falling back to repository deleteAll().", e.message)
+                    assessmentAssignmentRepository.deleteAll()
+                    referralRepository.deleteAll()
+                    studentHealthProfileRepository.deleteAll()
+                    studentRepository.deleteAll()
+                    trialAdminRepository.deleteAll()
+                    headCounsellorJpaRepository.deleteAll()
+                    teacherRepository.deleteAll()
+                    doctorRepository.deleteAll()
+                    userRepository.deleteAll()
+                    hospitalDepartmentRepository.deleteAll()
+                    hospitalRepository.deleteAll()
+                    schoolDepartmentJpaRepository.deleteAll()
+                    majorRepository.deleteAll()
+                    collegeRepository.deleteAll()
+                    degreeLevelRepository.deleteAll()
+                    ethnicityRepository.deleteAll()
+                    schoolRepository.deleteAll()
+                }
             }
-            jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 1")
-        } catch (e: Exception) {
-            // H2 doesn't support SHOW TABLES / TRUNCATE in the same way; fallback to repository deleteAll
-            assessmentAssignmentRepository.deleteAll()
-            referralRepository.deleteAll()
-            studentHealthProfileRepository.deleteAll()
-            studentRepository.deleteAll()
-            trialAdminRepository.deleteAll()
-            headCounsellorJpaRepository.deleteAll()
-            teacherRepository.deleteAll()
-            doctorRepository.deleteAll()
-            userRepository.deleteAll()
-            hospitalDepartmentRepository.deleteAll()
-            hospitalRepository.deleteAll()
-            schoolDepartmentJpaRepository.deleteAll()
-            majorRepository.deleteAll()
-            collegeRepository.deleteAll()
-            degreeLevelRepository.deleteAll()
-            ethnicityRepository.deleteAll()
-            schoolRepository.deleteAll()
+            is SeedWipePolicy.Decision.Refused ->
+                log.warn("Boot seed mode: WIPE REFUSED (fail closed). {} Nothing was truncated and nothing was seeded.", decision.reason)
+            is SeedWipePolicy.Decision.NoOp ->
+                log.info("Boot seed mode: NO-OP. {} Nothing was truncated.", decision.reason)
+        }
+
+        val shouldInsertDemoData = decision is SeedWipePolicy.Decision.SeedOnly ||
+            decision is SeedWipePolicy.Decision.WipeAndSeed
+        if (!shouldInsertDemoData) {
+            return@CommandLineRunner
         }
 
         val medCollege = collegeRepository.save(CollegeEntity(name = "医学院"))

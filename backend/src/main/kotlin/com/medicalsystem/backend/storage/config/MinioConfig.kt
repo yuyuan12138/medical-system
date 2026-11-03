@@ -15,8 +15,8 @@ import java.net.URI
 class MinioConfig(
     @Value("\${storage.s3.endpoint-internal:http://localhost:9000}") private val internalEndpoint: String,
     @Value("\${storage.s3.endpoint-external:http://localhost:9000}") private val externalEndpoint: String,
-    @Value("\${storage.s3.access-key:minioadmin}") private val accessKey: String,
-    @Value("\${storage.s3.secret-key:miniopassword}") private val secretKey: String,
+    @Value("\${storage.s3.access-key}") private val accessKey: String,
+    @Value("\${storage.s3.secret-key}") private val secretKey: String,
     @Value("\${storage.s3.region:us-east-1}") private val region: String
 ) {
     @Bean
