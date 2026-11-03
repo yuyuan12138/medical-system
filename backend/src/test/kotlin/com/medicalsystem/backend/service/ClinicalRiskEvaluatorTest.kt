@@ -135,34 +135,48 @@ class ClinicalRiskEvaluatorTest {
     }
 
     @Test
-    fun `testHighDepressionScore`() {
-        // PHQ-9 sum = 2 * 9 = 18 >= 15 -> HIGH
-        val answers = (1..9).associate { "phq9_$it" to 2 }
+    fun `testHighDepressionScore_highRiskGatePlusPhq15_isTier2Positive`() {
+        // 三层逻辑：第一层高危（GHQ二分=5）+ PHQ-9=18>=15 -> 第二层阳性，理由含 PHQ-9≥15。
+        val answers = (1..5).associate { "ghq_$it" to 2 } + (1..9).associate { "phq9_$it" to 2 }
 
         val result = clinicalRiskEvaluator.evaluateRisk(studentUser.id, answers)
 
         assertEquals(RiskStatus.HIGH, result.riskStatus)
+        assertEquals(ThreeTierScreeningEvaluator.DangerLevel.HIGH, result.dangerLevel)
         assertEquals(18, result.phq9Score)
+        assertTrue(result.layer2Positive)
+        assertTrue(result.screeningReasons.contains("PHQ-9≥15"))
+        assertTrue(result.scidInterview)
 
         val profile = studentHealthProfileJpaRepository.findByStudentId(studentUser.id).get()
         assertEquals(RiskStatus.HIGH, profile.riskStatus)
     }
 
     @Test
-    fun `testMediumDepressionScore`() {
-        // PHQ-9 sum = 12 (4 * 3 = 12) -> MEDIUM
-        val answers = mutableMapOf<String, Any>()
-        for (i in 1..4) {
-            answers["phq9_$i"] = 3
-        }
-        for (i in 5..9) {
-            answers["phq9_$i"] = 0
-        }
+    fun `testPhqAloneWithoutGhqRisk_isLowRiskNotTier2`() {
+        // PHQ-9=18 但无 GHQ 危险 -> 第一层低危，不进入第二层（甲方分层法：第二层仅高危者）。
+        val answers = (1..9).associate { "phq9_$it" to 2 }
+
+        val result = clinicalRiskEvaluator.evaluateRisk(studentUser.id, answers)
+
+        assertEquals(RiskStatus.LOW, result.riskStatus)
+        assertEquals(ThreeTierScreeningEvaluator.DangerLevel.LOW, result.dangerLevel)
+        assertEquals(18, result.phq9Score)
+        assertFalse(result.layer2Positive)
+        assertTrue(result.screeningReasons.isEmpty())
+    }
+
+    @Test
+    fun `testMediumDepressionScore_mediumGhq_isMediumRisk`() {
+        // GHQ二分=3（无危险因子）-> 第一层中危 -> MEDIUM，不进入第二层。
+        val answers = (1..3).associate { "ghq_$it" to 2 }
 
         val result = clinicalRiskEvaluator.evaluateRisk(studentUser.id, answers)
 
         assertEquals(RiskStatus.MEDIUM, result.riskStatus)
-        assertEquals(12, result.phq9Score)
+        assertEquals(ThreeTierScreeningEvaluator.DangerLevel.MEDIUM, result.dangerLevel)
+        assertEquals(3, result.ghq12BinaryTotal)
+        assertFalse(result.layer2Positive)
 
         val profile = studentHealthProfileJpaRepository.findByStudentId(studentUser.id).get()
         assertEquals(RiskStatus.MEDIUM, profile.riskStatus)

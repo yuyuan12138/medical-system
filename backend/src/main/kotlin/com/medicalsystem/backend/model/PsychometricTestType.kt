@@ -11,5 +11,7 @@ enum class PsychometricTestType {
     SCL_90,
     APQ_9_FATHER,
     APQ_9_MOTHER,
-    SLEEP_DISORDER
+    SLEEP_DISORDER,
+    GHQ_12,
+    ASRS
 }
