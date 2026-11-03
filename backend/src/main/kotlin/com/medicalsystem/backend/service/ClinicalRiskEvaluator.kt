@@ -48,22 +48,22 @@ class ClinicalRiskEvaluator(
 
         var isAcute = false
 
-        // ghq_23: Suicidal ideation ("过去任何时候您是否想过自杀或故意伤害自己")
+        // ghq_23: Suicidal ideation ("过去任何时候您是否想过自杀或故意伤害自己")，甲方编码"是"=0
         // phq9_9 >= 1: Thoughts of hurting oneself
-        if (ghq23 == 1 || phq99 >= 1) {
+        if (ghq23 == 0 || phq99 >= 1) {
             flags.add(RiskFlagName.SUICIDAL_IDEATION)
             isAcute = true
         }
 
-        // ghq_22: Suicide attempt history ("过去任何时候您是否有过喝药、割腕等自伤或自杀行为")
-        if (ghq22 == 1) {
+        // ghq_22: Suicide attempt history ("过去任何时候您是否有过喝药、割腕等自伤或自杀行为")，甲方编码"是"=0
+        if (ghq22 == 0) {
             flags.add(RiskFlagName.SUICIDE_ATTEMPT)
             isAcute = true
         }
 
-        // NSSI options: 1 = "0次", 2 = "1~2次", 3 = "3~5次", 4 = "6次及以上"
+        // NSSI 甲方文档编码: 0 = "0次", 1 = "1~2次", 2 = "3~5次", 3 = "6次及以上"；编码>=1 即为有自伤行为
         val hasSelfHarm = (1..5).any { i ->
-            (answers["nssi_$i"]?.toString()?.toIntOrNull() ?: 1) >= 2
+            (answers["nssi_$i"]?.toString()?.toIntOrNull() ?: 0) >= 1
         }
         if (hasSelfHarm) {
             flags.add(RiskFlagName.SELF_HARM)

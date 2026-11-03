@@ -82,8 +82,9 @@ class ClinicalRiskEvaluatorTest {
 
     @Test
     fun `testAcuteSuicidalIdeation_AlertsHeadCouncillor`() {
+        // 甲方文档编码：是非题"是"=0
         val answers = mapOf<String, Any>(
-            "ghq_23" to 1,
+            "ghq_23" to 0,
             "phq9_1" to 0
         )
 
@@ -105,9 +106,10 @@ class ClinicalRiskEvaluatorTest {
 
     @Test
     fun `testSuicideAttemptHistory`() {
+        // 甲方文档编码："是"=0、"否"=1
         val answers = mapOf<String, Any>(
-            "ghq_22" to 1,
-            "ghq_23" to 0
+            "ghq_22" to 0,
+            "ghq_23" to 1
         )
 
         val result = clinicalRiskEvaluator.evaluateRisk(studentUser.id, answers)
@@ -122,14 +124,14 @@ class ClinicalRiskEvaluatorTest {
     }
 
     @Test
-    fun `testSelfHarmFlag_OnlyOnOption2OrAbove`() {
-        // nssi_1 = 1 means "0次" (no self harm)
-        val negativeAnswers = mapOf<String, Any>("nssi_1" to 1)
+    fun `testSelfHarmFlag_OnlyOnOption1OrAbove`() {
+        // 甲方文档编码：nssi_1 = 0 即"0次"（无自伤）
+        val negativeAnswers = mapOf<String, Any>("nssi_1" to 0)
         val negResult = clinicalRiskEvaluator.evaluateRisk(studentUser.id, negativeAnswers)
         assertFalse(negResult.flags.contains(RiskFlagName.SELF_HARM))
 
-        // nssi_1 = 2 means "1~2次" (affirmative self harm)
-        val positiveAnswers = mapOf<String, Any>("nssi_1" to 2)
+        // 甲方文档编码：nssi_1 = 1 即"1~2次"（有自伤行为，≥1次）
+        val positiveAnswers = mapOf<String, Any>("nssi_1" to 1)
         val posResult = clinicalRiskEvaluator.evaluateRisk(studentUser.id, positiveAnswers)
         assertTrue(posResult.flags.contains(RiskFlagName.SELF_HARM))
     }
@@ -184,9 +186,10 @@ class ClinicalRiskEvaluatorTest {
 
     @Test
     fun `testNormalScore_LowRisk`() {
+        // 甲方文档编码：是非题"否"=1
         val answers = mapOf<String, Any>(
-            "ghq_22" to 0,
-            "ghq_23" to 0,
+            "ghq_22" to 1,
+            "ghq_23" to 1,
             "phq9_1" to 0,
             "phq9_2" to 0
         )

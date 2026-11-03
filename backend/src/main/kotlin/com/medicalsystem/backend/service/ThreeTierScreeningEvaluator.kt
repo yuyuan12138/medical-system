@@ -6,20 +6,18 @@ package com.medicalsystem.backend.service
  * 纯函数、无状态、不依赖 Spring / 数据库，可直接单测。
  *
  * 编码约定（重要）：
- * 本判别器读取的是**系统实际存储的作答编码**，即问卷 JSON 的选项取值编码，
- * 与现有 ClinicalRiskEvaluator / ClinicalRiskEvaluatorTest 使用的编码一致：
+ * 本判别器按**甲方文档编码**（《三级筛查判定问卷与评分标准》附录1–9，
+ * 与甲方2025年系统导出编码一致）解释作答。问卷 JSON 的选项取值编码已对齐甲方文档，
+ * 系统写入的答案即甲方文档编码，无需转换：
  *   - GHQ-12（ghq_1..12）：选项按 0..3 编码；选第3、4项（编码 2、3）记1分，选第1、2项（编码 0、1）记0分。
- *   - GHQ 附加是非题（ghq_18/19/21/22/23/24）："是"=1、"否"=0。
- *   - GHQ 附加 ghq_13/14（躯体/心理健康自评）：优秀=1 .. 差=5。
- *   - GHQ 附加 ghq_15/16/17：从无=0 .. 经常=3。
- *   - GHQ 附加 ghq_20（多选）：字符串码 tcm / western_doctor / psychiatrist 等。
- *   - 自伤行为问卷（nssi_1..5）：0次=1、1~2次=2、3~5次=3、6次及以上=4。
- *   - 一般情况 G31（门诊就诊史）："有"=1、"没有"=0。
- *   - ASRS（adhd_1..19）：从不=0 .. 非常频繁=4（与甲方附录8一致）。
+ *   - GHQ 附加是非题（ghq_18/19/21/22/23/24）："是"=0、"否"=1（甲方附录2）。
+ *   - GHQ 附加 ghq_13/14（躯体/心理健康自评）：优秀=0 .. 差=4，选"差"（编码4）计危险因子。
+ *   - GHQ 附加 ghq_15/16/17：从无=0 .. 经常=3，选"经常"（编码3）计危险因子。
+ *   - GHQ 附加 ghq_20（多选）：字符串码 tcm / western_doctor / psychiatrist 等（勾选中医/普通西医/精神科医生各计1分）。
+ *   - 自伤行为问卷（nssi_1..5）：0次=0、1~2次=1、3~5次=2、6次及以上=3；任一条编码>=1（即≥1次）为阳性。
+ *   - 一般情况 G31（门诊就诊史）："有"=0、"没有"=1，选"有"（编码0）为阳性。
+ *   - ASRS（adhd_1..19）：从不=0 .. 非常频繁=4（甲方附录8）。
  *   - PHQ-9（phq9_1..9）/ GAD-7（gad7_1..7）：0..3。
- *
- * 注意：甲方规范附录给出的"2025年系统导出编码"（是非题"是=0/否=1"、13-14题为0-4、
- * NSSI为0-3、G31"有=0"）与上述系统编码不同。此处按系统实际编码实现，未改动问卷 JSON。
  *
  * 三层判定：
  *  第一层（全部作答者）危险分级：
@@ -169,8 +167,8 @@ class ThreeTierScreeningEvaluator {
     /** 其他危险因子数量（0-14），附录2 的14项条件。 */
     fun otherRiskFactorCount(answers: Map<String, Any>): Int {
         var count = 0
-        if (intValue(answers["ghq_13"]) == 5) count++   // 躯体健康自评"差"
-        if (intValue(answers["ghq_14"]) == 5) count++   // 心理健康自评"差"
+        if (intValue(answers["ghq_13"]) == 4) count++   // 躯体健康自评"差"（编码4）
+        if (intValue(answers["ghq_14"]) == 4) count++   // 心理健康自评"差"（编码4）
         if (intValue(answers["ghq_15"]) == 3) count++   // 反反复复做/想一件事"经常"
         if (intValue(answers["ghq_16"]) == 3) count++   // 因害怕限制活动"经常"
         if (intValue(answers["ghq_17"]) == 3) count++   // 特别紧张/焦虑"经常"
@@ -191,9 +189,9 @@ class ThreeTierScreeningEvaluator {
     /** GAD-7 总分（0-21）。 */
     fun gad7Total(answers: Map<String, Any>): Int = sumRange(answers, "gad7_", 1..7)
 
-    /** 自伤行为问卷任一条>=1次（编码>=2）。 */
+    /** 自伤行为问卷任一条>=1次（甲方文档编码 0次=0，故编码>=1）。 */
     fun nssiAnyPositive(answers: Map<String, Any>): Boolean =
-        (1..5).any { i -> intValue(answers["nssi_$i"]) >= 2 }
+        (1..5).any { i -> intValue(answers["nssi_$i"]) >= 1 }
 
     /**
      * 独立 ADHD 名单判定（附录8）：四个阈值须同时满足。
@@ -234,15 +232,15 @@ class ThreeTierScreeningEvaluator {
         else -> 0
     }
 
-    /** 是非题"是"判定：系统编码 "是"=1、"否"=0。多选列表视为"是"（含任一选中项）。 */
+    /** 是非题"是"判定：甲方文档编码 "是"=0、"否"=1。多选列表视为"是"（含任一选中项）。 */
     private fun isYes(value: Any?): Boolean {
         if (value == null) return false
         return when (value) {
             is Boolean -> value
-            is Number -> value.toInt() == 1
+            is Number -> value.toInt() == 0
             is String -> {
                 val t = value.trim()
-                t == "1" || t == "是" || t.equals("yes", ignoreCase = true) || t.equals("true", ignoreCase = true)
+                t == "0" || t == "是" || t.equals("yes", ignoreCase = true) || t.equals("true", ignoreCase = true)
             }
             is List<*> -> value.any { isYes(it) }
             else -> false
