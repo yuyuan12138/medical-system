@@ -103,6 +103,46 @@ class AssessmentScoringEngineTest {
     }
 
     @Test
+    fun `scoreSectionOrNull binary-scores GHQ_12 and sums ASRS items 1-18 only`() {
+        val ghqSection = AssessmentSection(
+            code = "ghq_12_section",
+            title = "GHQ-12",
+            orderNum = 1,
+            questions = (1..12).map { i ->
+                AssessmentQuestion(
+                    code = "ghq_$i", text = "Q$i", orderNum = i,
+                    optionGroup = AssessmentOptionGroup("FOUR_POINT", (0..3).map { AssessmentOption(it, "$it") })
+                )
+            }
+        )
+        val ghqAnswers = (1..12).associate { "ghq_$it" to (if (it <= 5) 2 else 0) }
+        val ghqResult = AssessmentScoringEngine.scoreSectionOrNull(1L, ghqSection, ghqAnswers, 100L)
+        assertNotNull(ghqResult)
+        assertEquals(PsychometricTestType.GHQ_12, ghqResult!!.testType)
+        assertEquals(5, ghqResult.score.points)
+        assertEquals(12, ghqResult.score.max)
+
+        val asrsSection = AssessmentSection(
+            code = "adhd",
+            title = "ASRS",
+            orderNum = 2,
+            questions = (1..19).map { i ->
+                AssessmentQuestion(
+                    code = "adhd_$i", text = "Q$i", orderNum = i,
+                    optionGroup = AssessmentOptionGroup("ADHD_OPTIONS", (0..4).map { AssessmentOption(it, "$it") })
+                )
+            }
+        )
+        val asrsAnswers = (1..9).associate { "adhd_$it" to 4 } +
+            (10..18).associate { "adhd_$it" to 1 } + mapOf("adhd_19" to 4)
+        val asrsResult = AssessmentScoringEngine.scoreSectionOrNull(1L, asrsSection, asrsAnswers, 100L)
+        assertNotNull(asrsResult)
+        assertEquals(PsychometricTestType.ASRS, asrsResult!!.testType)
+        assertEquals(45, asrsResult.score.points)
+        assertEquals(72, asrsResult.score.max)
+    }
+
+    @Test
     fun `validateAnswers should pass when all questions are answered exactly`() {
         val scale = AssessmentScale(
             batteryCode = "TEST", title = "Test", duration = "", orderNum = 1,

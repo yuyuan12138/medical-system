@@ -170,11 +170,11 @@
           "text": "13. 近一个月您认为您的躯体健康状况：",
           "type": "single_choice",
           "options": [
-            { "value": 1, "label": "优秀" },
-            { "value": 2, "label": "良好" },
-            { "value": 3, "label": "好" },
-            { "value": 4, "label": "一般" },
-            { "value": 5, "label": "差" }
+            { "value": 0, "label": "优秀" },
+            { "value": 1, "label": "良好" },
+            { "value": 2, "label": "好" },
+            { "value": 3, "label": "一般" },
+            { "value": 4, "label": "差" }
           ]
         },
         {
@@ -182,11 +182,11 @@
           "text": "14. 近一个月您认为您的心理健康状况：",
           "type": "single_choice",
           "options": [
-            { "value": 1, "label": "优秀" },
-            { "value": 2, "label": "良好" },
-            { "value": 3, "label": "好" },
-            { "value": 4, "label": "一般" },
-            { "value": 5, "label": "差" }
+            { "value": 0, "label": "优秀" },
+            { "value": 1, "label": "良好" },
+            { "value": 2, "label": "好" },
+            { "value": 3, "label": "一般" },
+            { "value": 4, "label": "差" }
           ]
         },
         {
@@ -227,8 +227,8 @@
           "text": "18. 近一年您是否因喝酒而遇到麻烦？",
           "type": "single_choice",
           "options": [
-            { "value": 1, "label": "是" },
-            { "value": 0, "label": "否" }
+            { "value": 0, "label": "是" },
+            { "value": 1, "label": "否" }
           ]
         },
         {
@@ -236,8 +236,8 @@
           "text": "19. 您是否有过连续两个星期心情低落、兴趣减退？",
           "type": "single_choice",
           "options": [
-            { "value": 1, "label": "是" },
-            { "value": 0, "label": "否" }
+            { "value": 0, "label": "是" },
+            { "value": 1, "label": "否" }
           ]
         },
         {
@@ -265,9 +265,9 @@
           "text": "21. 过去任何时候您因精神或心理问题住过院吗？",
           "type": "single_choice",
           "options": [
-            { "value": 0, "label": "否" },
+            { "value": 1, "label": "否" },
             {
-              "value": 1,
+              "value": 0,
               "label": "是",
               "hasTextInput": true,
               "textInputPlaceholder": "请填写最近一次住院的时间和诊断（如：2024年3月，抑郁症）"
@@ -279,8 +279,8 @@
           "text": "22. 过去任何时候您是否有过喝药、割腕等自伤或自杀行为？",
           "type": "single_choice",
           "options": [
-            { "value": 1, "label": "是" },
-            { "value": 0, "label": "否" }
+            { "value": 0, "label": "是" },
+            { "value": 1, "label": "否" }
           ]
         },
         {
@@ -288,8 +288,8 @@
           "text": "23. 过去任何时候您是否想过自杀或故意伤害自己，不论当时您是否会真的去做？",
           "type": "single_choice",
           "options": [
-            { "value": 1, "label": "是" },
-            { "value": 0, "label": "否" }
+            { "value": 0, "label": "是" },
+            { "value": 1, "label": "否" }
           ]
         },
         {
@@ -297,9 +297,9 @@
           "text": "24. 您的家族中是否有成员患有精神心理方面的疾病？如抑郁症等。",
           "type": "single_choice",
           "options": [
-            { "value": 0, "label": "否" },
+            { "value": 1, "label": "否" },
             {
-              "value": 1,
+              "value": 0,
               "label": "是",
               "hasTextInput": true,
               "textInputPlaceholder": "请描述您与该成员的关系及诊断（如：母亲，抑郁症）"

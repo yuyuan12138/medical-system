@@ -582,8 +582,8 @@
           "text": "G31. 你有没有因为压力、睡眠、情绪等问题看过精神心理门诊或心理咨询师？",
           "type": "single_choice",
           "options": [
-            { "value": 0, "label": "没有" },
-            { "value": 1, "label": "有" }
+            { "value": 1, "label": "没有" },
+            { "value": 0, "label": "有" }
           ]
         },
         {

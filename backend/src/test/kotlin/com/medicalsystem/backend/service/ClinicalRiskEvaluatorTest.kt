@@ -82,8 +82,9 @@ class ClinicalRiskEvaluatorTest {
 
     @Test
     fun `testAcuteSuicidalIdeation_AlertsHeadCouncillor`() {
+        // 甲方文档编码：是非题"是"=0
         val answers = mapOf<String, Any>(
-            "ghq_23" to 1,
+            "ghq_23" to 0,
             "phq9_1" to 0
         )
 
@@ -105,9 +106,10 @@ class ClinicalRiskEvaluatorTest {
 
     @Test
     fun `testSuicideAttemptHistory`() {
+        // 甲方文档编码："是"=0、"否"=1
         val answers = mapOf<String, Any>(
-            "ghq_22" to 1,
-            "ghq_23" to 0
+            "ghq_22" to 0,
+            "ghq_23" to 1
         )
 
         val result = clinicalRiskEvaluator.evaluateRisk(studentUser.id, answers)
@@ -122,47 +124,61 @@ class ClinicalRiskEvaluatorTest {
     }
 
     @Test
-    fun `testSelfHarmFlag_OnlyOnOption2OrAbove`() {
-        // nssi_1 = 1 means "0次" (no self harm)
-        val negativeAnswers = mapOf<String, Any>("nssi_1" to 1)
+    fun `testSelfHarmFlag_OnlyOnOption1OrAbove`() {
+        // 甲方文档编码：nssi_1 = 0 即"0次"（无自伤）
+        val negativeAnswers = mapOf<String, Any>("nssi_1" to 0)
         val negResult = clinicalRiskEvaluator.evaluateRisk(studentUser.id, negativeAnswers)
         assertFalse(negResult.flags.contains(RiskFlagName.SELF_HARM))
 
-        // nssi_1 = 2 means "1~2次" (affirmative self harm)
-        val positiveAnswers = mapOf<String, Any>("nssi_1" to 2)
+        // 甲方文档编码：nssi_1 = 1 即"1~2次"（有自伤行为，≥1次）
+        val positiveAnswers = mapOf<String, Any>("nssi_1" to 1)
         val posResult = clinicalRiskEvaluator.evaluateRisk(studentUser.id, positiveAnswers)
         assertTrue(posResult.flags.contains(RiskFlagName.SELF_HARM))
     }
 
     @Test
-    fun `testHighDepressionScore`() {
-        // PHQ-9 sum = 2 * 9 = 18 >= 15 -> HIGH
-        val answers = (1..9).associate { "phq9_$it" to 2 }
+    fun `testHighDepressionScore_highRiskGatePlusPhq15_isTier2Positive`() {
+        // 三层逻辑：第一层高危（GHQ二分=5）+ PHQ-9=18>=15 -> 第二层阳性，理由含 PHQ-9≥15。
+        val answers = (1..5).associate { "ghq_$it" to 2 } + (1..9).associate { "phq9_$it" to 2 }
 
         val result = clinicalRiskEvaluator.evaluateRisk(studentUser.id, answers)
 
         assertEquals(RiskStatus.HIGH, result.riskStatus)
+        assertEquals(ThreeTierScreeningEvaluator.DangerLevel.HIGH, result.dangerLevel)
         assertEquals(18, result.phq9Score)
+        assertTrue(result.layer2Positive)
+        assertTrue(result.screeningReasons.contains("PHQ-9≥15"))
+        assertTrue(result.scidInterview)
 
         val profile = studentHealthProfileJpaRepository.findByStudentId(studentUser.id).get()
         assertEquals(RiskStatus.HIGH, profile.riskStatus)
     }
 
     @Test
-    fun `testMediumDepressionScore`() {
-        // PHQ-9 sum = 12 (4 * 3 = 12) -> MEDIUM
-        val answers = mutableMapOf<String, Any>()
-        for (i in 1..4) {
-            answers["phq9_$i"] = 3
-        }
-        for (i in 5..9) {
-            answers["phq9_$i"] = 0
-        }
+    fun `testPhqAloneWithoutGhqRisk_isLowRiskNotTier2`() {
+        // PHQ-9=18 但无 GHQ 危险 -> 第一层低危，不进入第二层（甲方分层法：第二层仅高危者）。
+        val answers = (1..9).associate { "phq9_$it" to 2 }
+
+        val result = clinicalRiskEvaluator.evaluateRisk(studentUser.id, answers)
+
+        assertEquals(RiskStatus.LOW, result.riskStatus)
+        assertEquals(ThreeTierScreeningEvaluator.DangerLevel.LOW, result.dangerLevel)
+        assertEquals(18, result.phq9Score)
+        assertFalse(result.layer2Positive)
+        assertTrue(result.screeningReasons.isEmpty())
+    }
+
+    @Test
+    fun `testMediumDepressionScore_mediumGhq_isMediumRisk`() {
+        // GHQ二分=3（无危险因子）-> 第一层中危 -> MEDIUM，不进入第二层。
+        val answers = (1..3).associate { "ghq_$it" to 2 }
 
         val result = clinicalRiskEvaluator.evaluateRisk(studentUser.id, answers)
 
         assertEquals(RiskStatus.MEDIUM, result.riskStatus)
-        assertEquals(12, result.phq9Score)
+        assertEquals(ThreeTierScreeningEvaluator.DangerLevel.MEDIUM, result.dangerLevel)
+        assertEquals(3, result.ghq12BinaryTotal)
+        assertFalse(result.layer2Positive)
 
         val profile = studentHealthProfileJpaRepository.findByStudentId(studentUser.id).get()
         assertEquals(RiskStatus.MEDIUM, profile.riskStatus)
@@ -170,9 +186,10 @@ class ClinicalRiskEvaluatorTest {
 
     @Test
     fun `testNormalScore_LowRisk`() {
+        // 甲方文档编码：是非题"否"=1
         val answers = mapOf<String, Any>(
-            "ghq_22" to 0,
-            "ghq_23" to 0,
+            "ghq_22" to 1,
+            "ghq_23" to 1,
             "phq9_1" to 0,
             "phq9_2" to 0
         )
