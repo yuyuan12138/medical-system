@@ -43,8 +43,10 @@ class AssessmentAssignmentRepositoryAdapter(
     }
 
     override fun save(assignment: AssessmentAssignment): AssessmentAssignment {
+        // saveAndFlush so optimistic-lock (version) conflicts surface here instead of at commit
+        // time, and so the returned model carries the bumped version for chained saves.
         val entity = mapper.toEntity(assignment)
-        val savedEntity = jpaRepository.save(entity)
+        val savedEntity = jpaRepository.saveAndFlush(entity)
         return mapper.toModel(savedEntity)
     }
 

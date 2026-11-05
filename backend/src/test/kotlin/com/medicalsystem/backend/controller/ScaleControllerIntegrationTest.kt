@@ -215,6 +215,34 @@ class ScaleControllerIntegrationTest {
     }
 
     @Test
+    fun `testSubmitScale_OnCompletedAssignment_Returns409NotSilent200`() {
+        // Given: the student has already completed this scale (via any entry point)
+        assessmentAssignmentJpaRepository.save(
+            AssessmentAssignmentEntity(
+                student = studentEntity,
+                assignedByUser = studentUser,
+                batteryCode = "comprehensive_student_intake_survey",
+                status = AssessmentStatus.COMPLETED,
+                assignedAt = java.time.LocalDateTime.now(),
+                completedAt = java.time.LocalDateTime.now(),
+                answersJson = """{"G1":1}"""
+            )
+        )
+
+        val submitReq = SubmitScaleRequest(answers = mapOf<String, Any>("G1" to 2))
+
+        // When/Then: a retake attempt via the scale path must be rejected with 409 (same as
+        // POST /api/assessments/{id}/submit), not silently accepted with 200.
+        mockMvc.perform(
+            post("/api/scales/comprehensive_student_intake_survey/submit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(submitReq))
+        )
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.error").value("问卷测评已完成，不可重复提交"))
+    }
+
+    @Test
     fun `testGetDraftAndListScales_FallsBackToAssignmentAnswersJson`() {
         assessmentAssignmentJpaRepository.save(
             AssessmentAssignmentEntity(
