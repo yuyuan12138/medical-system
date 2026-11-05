@@ -25,7 +25,11 @@ class NotificationEntity(
     @Column(name = "message_code", nullable = false)
     val messageCode: NotificationMessageCode,
 
-    @Column(name = "payload", columnDefinition = "JSON")
+    // Plain string column, NOT columnDefinition = "JSON": H2 converts a VARCHAR bind value
+    // assigned to a JSON column by wrapping it as a JSON *string scalar* instead of parsing it,
+    // so reads came back double-encoded ("{\"...\"}") and payload deserialization silently
+    // failed (empty payload on every read). A plain string column round-trips exactly.
+    @Column(name = "payload", length = 2048)
     val payload: String,
 
     @Column(name = "is_read", nullable = false)

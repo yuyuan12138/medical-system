@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.medicalsystem.backend.entity.NotificationEntity
 import com.medicalsystem.backend.model.Notification
 import com.medicalsystem.backend.model.NotificationActionType
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -13,6 +14,7 @@ class NotificationRepositoryAdapter(
 ) : NotificationRepository {
 
     private val objectMapper = ObjectMapper()
+    private val logger = LoggerFactory.getLogger(NotificationRepositoryAdapter::class.java)
 
     override fun save(notification: Notification): Notification {
         val entity = NotificationEntity(
@@ -55,6 +57,10 @@ class NotificationRepositoryAdapter(
         val payloadMap = try {
             objectMapper.readValue(entity.payload, typeRef)
         } catch (e: Exception) {
+            logger.warn(
+                "Failed to deserialize notification payload (id={}, messageCode={}); returning empty payload",
+                entity.id, entity.messageCode, e
+            )
             emptyMap()
         }
         

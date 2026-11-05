@@ -1,7 +1,9 @@
 package com.medicalsystem.backend.controller
 
 import com.medicalsystem.backend.entity.CollegeEntity
+import com.medicalsystem.backend.entity.EthnicityEntity
 import com.medicalsystem.backend.entity.MajorEntity
+import com.medicalsystem.backend.entity.StudentDemographicsEntity
 import com.medicalsystem.backend.entity.StudentEntity
 import com.medicalsystem.backend.entity.TeacherEntity
 import com.medicalsystem.backend.entity.UserEntity
@@ -11,6 +13,7 @@ import com.medicalsystem.backend.model.EmailAddress
 import com.medicalsystem.backend.model.User
 import com.medicalsystem.backend.model.UserRole
 import com.medicalsystem.backend.repository.CollegeJpaRepository
+import com.medicalsystem.backend.repository.EthnicityJpaRepository
 import com.medicalsystem.backend.repository.MajorJpaRepository
 import com.medicalsystem.backend.repository.StudentJpaRepository
 import com.medicalsystem.backend.repository.TeacherJpaRepository
@@ -57,6 +60,9 @@ class FreshStudentProfileIntegrationTest {
 
     @Autowired
     private lateinit var majorJpaRepository: MajorJpaRepository
+
+    @Autowired
+    private lateinit var ethnicityJpaRepository: EthnicityJpaRepository
 
     @Autowired
     private lateinit var teacherJpaRepository: TeacherJpaRepository
@@ -126,6 +132,38 @@ class FreshStudentProfileIntegrationTest {
                 .header("Authorization", "mock-token-$uninvolvedTeacherUserId")
         )
             .andExpect(status().isNotFound())
+    }
+
+    @Test
+    fun `me profile returns 200 for fresh student with ethnicity and major set`() {
+        val sfx = seq.incrementAndGet()
+        val college = collegeJpaRepository.save(CollegeEntity(name = "ethnic-学院-$sfx"))
+        val major = majorJpaRepository.save(MajorEntity(name = "ethnic-专业-$sfx", college = college))
+        val ethnicity = ethnicityJpaRepository.save(EthnicityEntity(name = "汉族-$sfx"))
+
+        val studentUser = userJpaRepository.save(
+            UserEntity(name = "民族学生-$sfx", role = UserRole.STUDENT, email = EmailAddress("ethnic-stu-$sfx@t.com"), status = AccountStatus.ACTIVE)
+        )
+        studentJpaRepository.save(
+            StudentEntity(
+                id = studentUser.id!!,
+                studentNumber = "ETH-$sfx",
+                name = "民族学生-$sfx",
+                major = major,
+                enrollmentDate = java.time.LocalDate.now(),
+                demographics = StudentDemographicsEntity(
+                    gender = com.medicalsystem.backend.model.Gender.MALE,
+                    ethnicity = ethnicity
+                )
+            )
+        )
+
+        mockMvc.perform(
+            get("/api/students/me/profile")
+                .header("Authorization", "mock-token-${studentUser.id!!}")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("\$.demographics.ethnicity").value("汉族-$sfx"))
     }
 
     @Test

@@ -19,7 +19,11 @@ interface StudentJpaRepository : JpaRepository<StudentEntity, Long>, JpaSpecific
     fun countByDemographicsSchoolId(schoolId: Long): Long
     fun countByDegreeLevelId(degreeLevelId: Long): Long
 
-    @EntityGraph(attributePaths = ["major"])
+    // Fetch every LAZY reference read by StudentProfileController.getMyProfile in the same
+    // query: `major` and the embedded demographics' `ethnicity` (@ManyToOne LAZY). Without
+    // eagerly fetching ethnicity, reading student.demographics?.ethnicity outside the session
+    // raised LazyInitializationException (HTTP 500) for students with ethnicity set.
+    @EntityGraph(attributePaths = ["major", "demographics.ethnicity"])
     fun findWithMajorById(id: Long): StudentEntity?
 
     @Query("SELECT s.studentNumber FROM StudentEntity s")
