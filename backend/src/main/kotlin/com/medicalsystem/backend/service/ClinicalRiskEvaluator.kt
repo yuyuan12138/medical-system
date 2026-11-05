@@ -29,7 +29,8 @@ class ClinicalRiskEvaluator(
     private val studentHealthProfileJpaRepository: StudentHealthProfileJpaRepository,
     private val studentJpaRepository: StudentJpaRepository,
     private val userJpaRepository: UserJpaRepository,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val eventPublisher: com.medicalsystem.backend.event.DomainEventPublisher
 ) {
     private val logger = LoggerFactory.getLogger(ClinicalRiskEvaluator::class.java)
     private val threeTierScreeningEvaluator = ThreeTierScreeningEvaluator()
@@ -110,6 +111,8 @@ class ClinicalRiskEvaluator(
 
         if (evaluatedRisk == RiskStatus.HIGH) {
             val studentName = student?.name ?: "学生"
+            val scaleCode = completedTests.map { it.testType.name }.distinct().joinToString(",")
+            val riskFlagNames = flags.map { it.name }
             val headCouncillors = userJpaRepository.findAll().filter { it.role == UserRole.HEAD_COUNSELLOR }
             for (hc in headCouncillors) {
                 try {
@@ -118,9 +121,13 @@ class ClinicalRiskEvaluator(
                         messageCode = NotificationMessageCode.ASSESSMENT_HIGH_RISK_ALERT_HC,
                         payload = mapOf(
                             "studentId" to studentId.toString(),
+                            "studentNumber" to (student?.studentNumber ?: ""),
                             "studentName" to studentName,
+                            "riskStatus" to evaluatedRisk.name,
+                            "riskFlags" to riskFlagNames,
                             "crisisFlags" to flags.joinToString { it.name },
                             "level" to "HIGH",
+                            "scaleCode" to scaleCode,
                             "screeningReasons" to screening.screeningReasonsJoined
                         ),
                         actionType = NotificationActionType.VIEW_RECORDS,
@@ -129,6 +136,22 @@ class ClinicalRiskEvaluator(
                 } catch (e: Exception) {
                     logger.error("Failed to notify Head Councillor ${hc.id}: ${e.message}")
                 }
+            }
+
+            // Notify the risk pipeline: a HIGH-risk event must auto-create a referral for the
+            // HEAD_COUNSELLOR. The listener is fail-open — it must never break the submission.
+            try {
+                eventPublisher.publish(
+                    com.medicalsystem.backend.event.StudentRiskStatusChangedEvent(
+                        studentId = studentId,
+                        oldStatus = profileOpt.orElse(null)?.riskStatus ?: RiskStatus.LOW,
+                        newStatus = evaluatedRisk,
+                        riskFlags = riskFlagNames,
+                        scaleCode = scaleCode.ifEmpty { null }
+                    )
+                )
+            } catch (e: Exception) {
+                logger.error("Failed to publish StudentRiskStatusChangedEvent for student $studentId: ${e.message}")
             }
         }
 

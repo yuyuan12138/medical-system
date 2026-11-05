@@ -12,6 +12,15 @@ data class ReferralInitiatedEvent(
     override val occurredOn: LocalDateTime = LocalDateTime.now()
 ) : DomainEvent
 
+data class StudentRiskStatusChangedEvent(
+    val studentId: Long,
+    val oldStatus: RiskStatus,
+    val newStatus: RiskStatus,
+    val riskFlags: List<String> = emptyList(),
+    val scaleCode: String? = null,
+    override val occurredOn: LocalDateTime = LocalDateTime.now()
+) : DomainEvent
+
 data class ReferralStatusChangedEvent(
     val referralId: Long,
     val oldStatus: ReferralStatus,

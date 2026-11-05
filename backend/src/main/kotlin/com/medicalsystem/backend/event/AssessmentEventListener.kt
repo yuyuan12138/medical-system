@@ -80,8 +80,12 @@ class AssessmentEventListener(
                     messageCode = NotificationMessageCode.ASSESSMENT_HIGH_RISK_ALERT_HC,
                     payload = mapOf(
                         "studentId" to student.id.toString(),
+                        "studentNumber" to student.studentNumber,
                         "studentName" to student.name,
+                        "riskStatus" to "HIGH",
+                        "riskFlags" to event.completedTests.filter { it.score.points > it.score.max * 0.8 }.map { it.testType.name },
                         "batteryCode" to event.batteryCode,
+                        "scaleCode" to event.batteryCode,
                         "crisisFlags" to event.completedTests.filter { it.score.points > it.score.max * 0.8 }.joinToString { it.testType.name },
                         "level" to event.completedTests.joinToString { if (it.score.points > it.score.max * 0.8) "SEVERE" else "NORMAL" }
                     ),
