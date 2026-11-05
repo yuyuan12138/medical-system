@@ -1,6 +1,7 @@
 package com.medicalsystem.backend.repository
 
 import com.medicalsystem.backend.entity.StudentEntity
+import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Query
@@ -17,6 +18,9 @@ interface StudentJpaRepository : JpaRepository<StudentEntity, Long>, JpaSpecific
     fun countByDemographicsEthnicityId(ethnicityId: Long): Long
     fun countByDemographicsSchoolId(schoolId: Long): Long
     fun countByDegreeLevelId(degreeLevelId: Long): Long
+
+    @EntityGraph(attributePaths = ["major"])
+    fun findWithMajorById(id: Long): StudentEntity?
 
     @Query("SELECT s.studentNumber FROM StudentEntity s")
     fun findAllStudentNumbers(): Set<String>

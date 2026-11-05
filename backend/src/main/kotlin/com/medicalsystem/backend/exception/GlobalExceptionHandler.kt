@@ -14,6 +14,20 @@ class GlobalExceptionHandler {
             .body(mapOf("error" to (e.message ?: "Resource not found")))
     }
 
+    @ExceptionHandler(ForbiddenException::class)
+    fun handleForbidden(e: ForbiddenException): ResponseEntity<Map<String, String>> {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(mapOf("error" to (e.message ?: "Forbidden")))
+    }
+
+    // StudentNotFoundException is a DomainException, not a ResourceNotFoundException; without
+    // this handler it surfaced as HTTP 500 on visibility-miss reads (e.g. psychometrics).
+    @ExceptionHandler(StudentNotFoundException::class)
+    fun handleStudentNotFound(e: StudentNotFoundException): ResponseEntity<Map<String, String>> {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(mapOf("error" to (e.message ?: "Student not found")))
+    }
+
     @ExceptionHandler(ConflictException::class)
     fun handleConflict(e: ConflictException): ResponseEntity<Map<String, String>> {
         return ResponseEntity.status(HttpStatus.CONFLICT)
