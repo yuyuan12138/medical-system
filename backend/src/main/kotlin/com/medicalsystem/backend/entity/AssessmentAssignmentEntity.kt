@@ -53,5 +53,10 @@ class AssessmentAssignmentEntity(
     var dispatch: AssessmentDispatchEntity? = null,
 
     @Column(name = "severity_id")
-    var severity: com.medicalsystem.backend.model.ResultSeverity = com.medicalsystem.backend.model.ResultSeverity.PENDING
+    var severity: com.medicalsystem.backend.model.ResultSeverity = com.medicalsystem.backend.model.ResultSeverity.PENDING,
+
+    /** Optimistic-lock version: guarantees only one submit transaction can transition a row to COMPLETED. */
+    @Version
+    @Column(name = "version", nullable = false)
+    var version: Long = 0
 )

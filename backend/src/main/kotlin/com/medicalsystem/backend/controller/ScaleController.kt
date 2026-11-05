@@ -3,6 +3,7 @@ package com.medicalsystem.backend.controller
 import com.medicalsystem.backend.config.AssessmentCatalogLoader
 import com.medicalsystem.backend.dto.*
 import com.medicalsystem.backend.entity.AssessmentAssignmentEntity
+import com.medicalsystem.backend.exception.ConflictException
 import com.medicalsystem.backend.exception.NotFoundException
 import com.medicalsystem.backend.exception.UnauthorizedException
 import com.medicalsystem.backend.model.*
@@ -97,13 +98,9 @@ class ScaleController(
             val completed = assignmentJpaRepository.findByStudentId(currentUser.id)
                 .firstOrNull { it.batteryCode == code && it.status == AssessmentStatus.COMPLETED }
             if (completed != null) {
-                return ResponseEntity.ok(
-                    SubmitScaleResponse(
-                        scaleCode = code,
-                        status = "COMPLETED",
-                        completedAt = completed.completedAt?.toString() ?: LocalDateTime.now().toString()
-                    )
-                )
+                // Consistent with POST /api/assessments/{id}/submit: a completed assignment must
+                // not silently accept (and drop) new answers — surface 409 instead of 200.
+                throw ConflictException("问卷测评已完成，不可重复提交")
             }
 
             val student = studentJpaRepository.findById(currentUser.id).orElseThrow {

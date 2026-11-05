@@ -34,6 +34,20 @@ class GlobalExceptionHandler {
             .body(mapOf("error" to (e.message ?: "Conflict")))
     }
 
+    /**
+     * Safety net: if a version/optimistic-lock conflict escapes a transactional boundary without
+     * being translated (e.g. flush at commit time from a non-submit path), still surface it as a
+     * clear 409 instead of a 500.
+     */
+    @ExceptionHandler(
+        org.springframework.dao.OptimisticLockingFailureException::class,
+        jakarta.persistence.OptimisticLockException::class
+    )
+    fun handleOptimisticLock(e: Exception): ResponseEntity<Map<String, String>> {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(mapOf("error" to "操作冲突，数据已被其他操作修改，请重试"))
+    }
+
     @ExceptionHandler(UnauthorizedException::class)
     fun handleUnauthorized(e: UnauthorizedException): ResponseEntity<Map<String, String>> {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
