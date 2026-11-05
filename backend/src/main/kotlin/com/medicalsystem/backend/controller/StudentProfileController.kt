@@ -55,12 +55,14 @@ class StudentProfileController(
         return ResponseEntity.ok(mapOf("status" to "updated"))
     }
 
+    // Uses a fetch-join query: spring.jpa.open-in-view=false and `major` is a LAZY @ManyToOne,
+    // so reading student.major outside a session raised LazyInitializationException (HTTP 500)
+    // for freshly registered students.
     @GetMapping("/me/profile")
     fun getMyProfile(@CurrentUser user: User?): ResponseEntity<StudentProfileResponseDto> {
         val currentUser = user ?: throw UnauthorizedException("Unauthorized")
-        val student = studentJpaRepository.findById(currentUser.id).orElseThrow {
-            NotFoundException("Student profile not found for user ${currentUser.id}")
-        }
+        val student = studentJpaRepository.findWithMajorById(currentUser.id)
+            ?: throw NotFoundException("Student profile not found for user ${currentUser.id}")
         val userEntity = userJpaRepository.findById(currentUser.id).orElse(null)
 
         val assignments = assignmentJpaRepository.findByStudentId(currentUser.id)

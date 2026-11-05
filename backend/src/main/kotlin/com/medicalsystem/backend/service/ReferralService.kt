@@ -110,6 +110,13 @@ class ReferralService(
     fun initiateReferral(dto: com.medicalsystem.backend.dto.CreateReferralDto, user: User): ReferralDto {
         val student = studentRepository.findById(dto.studentId)
             .orElseThrow { com.medicalsystem.backend.exception.StudentNotFoundException(dto.studentId) }
+
+        // Writes must obey the same visibility policy as reads: a user may only initiate a
+        // referral for a student they can access (HEAD_COUNSELLOR/SYSTEM_ADMIN see All).
+        studentRepository.findByIdAndVisibleTo(dto.studentId, user)
+            .orElseThrow {
+                com.medicalsystem.backend.exception.ForbiddenException("referral_target_not_visible")
+            }
             
         val attachmentModels = dto.attachments.map { att ->
             com.medicalsystem.backend.model.ReferralAttachment(
